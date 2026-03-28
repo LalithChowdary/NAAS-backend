@@ -9,6 +9,8 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
     List<Subscription> findByCustomerId(Long customerId);
+
     List<Subscription> findByCustomerIdAndStatus(Long customerId, SubscriptionStatus status);
+
     Optional<Subscription> findByIdAndCustomerId(Long id, Long customerId);
 }

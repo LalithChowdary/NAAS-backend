@@ -10,4 +10,3 @@ public class CreateSubscriptionRequest {
     private List<Long> publicationIds;
     private LocalDate startDate;
 }
-

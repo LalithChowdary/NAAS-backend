@@ -16,8 +16,10 @@ public class CustomerPublicationController {
 
     private final PublicationService publicationService;
 
-    // Customers should primarily see enabled ones. Alternatively, the frontend drops the ones that are not enabled.
-    // If the backend has strictly role secured logic, we can expose this to everyone (or secured without Role='ADMIN')
+    // Customers should primarily see enabled ones. Alternatively, the frontend
+    // drops the ones that are not enabled.
+    // If the backend has strictly role secured logic, we can expose this to
+    // everyone (or secured without Role='ADMIN')
     @GetMapping
     public ResponseEntity<List<PublicationResponse>> getActivePublications() {
         return ResponseEntity.ok(publicationService.searchPublications(null, true));

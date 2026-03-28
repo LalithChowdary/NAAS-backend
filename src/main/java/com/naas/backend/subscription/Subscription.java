@@ -42,7 +42,7 @@ public class Subscription {
     private LocalDate endDate;
 
     private LocalDate suspendStartDate;
-    
+
     private LocalDate suspendEndDate;
 
     @Builder.Default

@@ -27,7 +27,8 @@ public class SubscriptionService {
     private void validateAdvanceNotice(LocalDate desiredDate) {
         LocalDate minAllowedDate = LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS);
         if (desiredDate.isBefore(minAllowedDate)) {
-            throw new IllegalArgumentException("Action requires at least " + ADVANCE_NOTICE_DAYS + " days advance notice. Earliest allowed date is " + minAllowedDate);
+            throw new IllegalArgumentException("Action requires at least " + ADVANCE_NOTICE_DAYS
+                    + " days advance notice. Earliest allowed date is " + minAllowedDate);
         }
     }
 
@@ -41,7 +42,8 @@ public class SubscriptionService {
             throw new IllegalArgumentException("At least one publication must be selected");
         }
 
-        List<Subscription> existingSubscriptions = subscriptionRepository.findByCustomerIdAndStatus(customerId, SubscriptionStatus.ACTIVE);
+        List<Subscription> existingSubscriptions = subscriptionRepository.findByCustomerIdAndStatus(customerId,
+                SubscriptionStatus.ACTIVE);
         java.util.List<Subscription> newSubscriptions = new java.util.ArrayList<>();
 
         for (Long pubId : request.getPublicationIds()) {
@@ -63,7 +65,7 @@ public class SubscriptionService {
                     .startDate(request.getStartDate())
                     .status(SubscriptionStatus.ACTIVE)
                     .build();
-            
+
             newSubscriptions.add(subscription);
         }
 
@@ -72,7 +74,8 @@ public class SubscriptionService {
                 .collect(Collectors.toList());
     }
 
-    public SubscriptionResponse cancelSubscription(Long customerId, Long subscriptionId, CancelSubscriptionRequest request) {
+    public SubscriptionResponse cancelSubscription(Long customerId, Long subscriptionId,
+            CancelSubscriptionRequest request) {
         if (request.getCancelDate() == null) {
             request.setCancelDate(LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS));
         } else {
@@ -88,9 +91,11 @@ public class SubscriptionService {
         return mapToResponse(subscriptionRepository.save(subscription));
     }
 
-    public SubscriptionResponse suspendSubscription(Long customerId, Long subscriptionId, SuspendSubscriptionRequest request) {
+    public SubscriptionResponse suspendSubscription(Long customerId, Long subscriptionId,
+            SuspendSubscriptionRequest request) {
         validateAdvanceNotice(request.getSuspendStartDate());
-        if (request.getSuspendEndDate() != null && request.getSuspendEndDate().isBefore(request.getSuspendStartDate())) {
+        if (request.getSuspendEndDate() != null
+                && request.getSuspendEndDate().isBefore(request.getSuspendStartDate())) {
             throw new IllegalArgumentException("Suspend end date cannot be before start date");
         }
 
@@ -119,7 +124,7 @@ public class SubscriptionService {
                 .build();
 
         pause = globalDeliveryPauseRepository.save(pause);
-        
+
         return GlobalDeliveryPauseResponse.builder()
                 .id(pause.getId())
                 .startDate(pause.getStartDate())
@@ -133,7 +138,7 @@ public class SubscriptionService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     public List<GlobalDeliveryPauseResponse> getCustomerGlobalPauses(Long customerId) {
         return globalDeliveryPauseRepository.findByCustomerId(customerId).stream()
                 .map(pause -> GlobalDeliveryPauseResponse.builder()
