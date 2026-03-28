@@ -16,6 +16,7 @@ public class CustomerResponse {
     private String address;
     private String city;
     private String pincode;
+    private String area;
     private boolean active;
     private LocalDateTime createdAt;
 }

@@ -10,4 +10,5 @@ public class UpdateCustomerRequest {
     private String address;
     private String city;
     private String pincode;
+    private String area;
 }

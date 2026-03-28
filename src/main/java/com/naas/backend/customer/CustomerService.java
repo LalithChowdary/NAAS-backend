@@ -33,6 +33,7 @@ public class CustomerService {
                 .address(customer.getAddress())
                 .city(customer.getCity())
                 .pincode(customer.getPincode())
+                .area(customer.getArea())
                 .active(customer.isActive())
                 .createdAt(customer.getCreatedAt())
                 .build();
@@ -53,11 +54,18 @@ public class CustomerService {
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
-        if (request.getName() != null)     customer.setName(request.getName());
-        if (request.getPhone() != null)    customer.setPhone(request.getPhone());
-        if (request.getAddress() != null)  customer.setAddress(request.getAddress());
-        if (request.getCity() != null)     customer.setCity(request.getCity());
-        if (request.getPincode() != null)  customer.setPincode(request.getPincode());
+        if (request.getName() != null)
+            customer.setName(request.getName());
+        if (request.getPhone() != null)
+            customer.setPhone(request.getPhone());
+        if (request.getAddress() != null)
+            customer.setAddress(request.getAddress());
+        if (request.getCity() != null)
+            customer.setCity(request.getCity());
+        if (request.getPincode() != null)
+            customer.setPincode(request.getPincode());
+        if (request.getArea() != null)
+            customer.setArea(request.getArea());
 
         customerRepository.save(customer);
         return toResponse(customer);
@@ -120,6 +128,7 @@ public class CustomerService {
                 .address(request.getAddress())
                 .city(request.getCity())
                 .pincode(request.getPincode())
+                .area(request.getArea())
                 .active(true)
                 .build();
         customerRepository.save(customer);
@@ -132,11 +141,18 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
 
-        if (request.getName() != null)     customer.setName(request.getName());
-        if (request.getPhone() != null)    customer.setPhone(request.getPhone());
-        if (request.getAddress() != null)  customer.setAddress(request.getAddress());
-        if (request.getCity() != null)     customer.setCity(request.getCity());
-        if (request.getPincode() != null)  customer.setPincode(request.getPincode());
+        if (request.getName() != null)
+            customer.setName(request.getName());
+        if (request.getPhone() != null)
+            customer.setPhone(request.getPhone());
+        if (request.getAddress() != null)
+            customer.setAddress(request.getAddress());
+        if (request.getCity() != null)
+            customer.setCity(request.getCity());
+        if (request.getPincode() != null)
+            customer.setPincode(request.getPincode());
+        if (request.getArea() != null)
+            customer.setArea(request.getArea());
 
         customerRepository.save(customer);
         return toResponse(customer);

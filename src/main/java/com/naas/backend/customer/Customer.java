@@ -30,6 +30,7 @@ public class Customer {
     private String address;
     private String city;
     private String pincode;
+    private String area; // Used for delivery routing
 
     @Builder.Default
     private boolean active = true;

@@ -27,4 +27,5 @@ public class DeliveryPerson {
     private String phone;
     private String employeeId;
     private String payoutDetails;
+    private String assignedArea; // Area for delivery (matches Customer.area)
 }
