@@ -25,4 +25,10 @@ public class CreateDeliveryPersonRequest {
     private String employeeId;
 
     private String payoutDetails;
+
+
+    class A{
+
+
+    }
 }
