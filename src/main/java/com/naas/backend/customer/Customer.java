@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -28,4 +30,10 @@ public class Customer {
     private String address;
     private String city;
     private String pincode;
+
+    @Builder.Default
+    private boolean active = true;
+
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

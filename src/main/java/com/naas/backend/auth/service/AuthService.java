@@ -81,8 +81,7 @@ public class AuthService {
                 .build();
     }
 
-    private String getDisplayName(User user)
-    {
+    private String getDisplayName(User user) {
         switch (user.getRole()) {
             case CUSTOMER:
                 return customerRepository.findByUser(user)

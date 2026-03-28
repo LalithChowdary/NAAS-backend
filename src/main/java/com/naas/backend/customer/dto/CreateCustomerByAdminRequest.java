@@ -1,4 +1,4 @@
-package com.naas.backend.admin.dto;
+package com.naas.backend.customer.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class CreateDeliveryPersonRequest {
+public class CreateCustomerByAdminRequest {
 
     @NotBlank(message = "Name is required")
     private String name;
@@ -20,9 +20,7 @@ public class CreateDeliveryPersonRequest {
     private String password;
 
     private String phone;
-
-    @NotBlank(message = "Employee ID is required")
-    private String employeeId;
-
-    private String payoutDetails;
+    private String address;
+    private String city;
+    private String pincode;
 }
