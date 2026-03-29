@@ -24,6 +24,7 @@ public class DeliveryPersonService {
     private final PasswordEncoder passwordEncoder;
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final PublicationRepository publicationRepository;
+    private final com.naas.backend.subscription.SubscriptionRepository subscriptionRepository;
 
     public DeliveryPerson createDeliveryPerson(String name, String email, String password, String phone,
             String employeeId, String assignedArea) {
@@ -67,9 +68,12 @@ public class DeliveryPersonService {
 
         double totalValue = 0.0;
         for (DeliveryRecord record : deliveries) {
-            Publication pub = publicationRepository.findById(record.getPublicationId()).orElse(null);
-            if (pub != null) {
-                totalValue += pub.getPrice().doubleValue();
+            com.naas.backend.subscription.Subscription sub = subscriptionRepository.findById(record.getSubscriptionId())
+                    .orElse(null);
+            if (sub != null && sub.getPublications() != null) {
+                for (com.naas.backend.publication.Publication pub : sub.getPublications()) {
+                    totalValue += pub.getPrice().doubleValue();
+                }
             }
         }
         return totalValue * 0.025; // 2.5% agency rule

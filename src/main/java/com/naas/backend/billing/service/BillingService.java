@@ -69,26 +69,28 @@ public class BillingService {
 
             for (Subscription sub : subscriptions) {
                 long deliveriesCount = deliveryRecordRepository
-                        .countByCustomerIdAndPublicationIdAndDeliveryDateBetweenAndStatus(
+                        .countByCustomerIdAndSubscriptionIdAndDeliveryDateBetweenAndStatus(
                                 customer.getId(),
-                                sub.getPublication().getId(),
+                                sub.getId(),
                                 startDate,
                                 endDate,
                                 DeliveryRecord.DeliveryStatus.DELIVERED);
 
-                if (deliveriesCount > 0) {
-                    BigDecimal pricePerUnit = BigDecimal.valueOf(sub.getPublication().getPrice());
-                    BigDecimal itemAmount = pricePerUnit.multiply(BigDecimal.valueOf(deliveriesCount));
+                if (deliveriesCount > 0 && sub.getPublications() != null) {
+                    for (com.naas.backend.publication.Publication pub : sub.getPublications()) {
+                        BigDecimal pricePerUnit = BigDecimal.valueOf(pub.getPrice());
+                        BigDecimal itemAmount = pricePerUnit.multiply(BigDecimal.valueOf(deliveriesCount));
 
-                    BillItem item = BillItem.builder()
-                            .publication(sub.getPublication())
-                            .deliveriesCount((int) deliveriesCount)
-                            .pricePerUnit(pricePerUnit)
-                            .itemAmount(itemAmount)
-                            .build();
+                        BillItem item = BillItem.builder()
+                                .publication(pub)
+                                .deliveriesCount((int) deliveriesCount)
+                                .pricePerUnit(pricePerUnit)
+                                .itemAmount(itemAmount)
+                                .build();
 
-                    billItems.add(item);
-                    totalAmount = totalAmount.add(itemAmount);
+                        billItems.add(item);
+                        totalAmount = totalAmount.add(itemAmount);
+                    }
                 }
             }
 

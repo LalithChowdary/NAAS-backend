@@ -29,7 +29,7 @@ public class DeliveryRecord {
     @Column(nullable = false)
     private Long customerId;
 
-    @Column(nullable = false)
+    @Column(name = "publication_id", nullable = true)
     private Long publicationId;
 
     @Column(nullable = false)

@@ -11,14 +11,17 @@ import java.util.Optional;
 @Repository
 public interface DeliveryRecordRepository extends JpaRepository<DeliveryRecord, Long> {
 
-    List<DeliveryRecord> findByDeliveryDateAndDeliveryPersonId(LocalDate deliveryDate, Long deliveryPersonId);
+        List<DeliveryRecord> findByDeliveryDateAndDeliveryPersonId(LocalDate deliveryDate, Long deliveryPersonId);
 
-    Optional<DeliveryRecord> findByDeliveryDateAndSubscriptionId(LocalDate deliveryDate, Long subscriptionId);
+        List<DeliveryRecord> findByDeliveryDate(LocalDate deliveryDate);
 
-    List<DeliveryRecord> findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
-            Long deliveryPersonId, LocalDate startDate, LocalDate endDate, DeliveryRecord.DeliveryStatus status);
+        Optional<DeliveryRecord> findByDeliveryDateAndSubscriptionId(LocalDate deliveryDate, Long subscriptionId);
 
-    long countByCustomerIdAndPublicationIdAndDeliveryDateBetweenAndStatus(
-            Long customerId, Long publicationId, LocalDate startDate, LocalDate endDate,
-            DeliveryRecord.DeliveryStatus status);
+        List<DeliveryRecord> findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
+                        Long deliveryPersonId, LocalDate startDate, LocalDate endDate,
+                        DeliveryRecord.DeliveryStatus status);
+
+        long countByCustomerIdAndSubscriptionIdAndDeliveryDateBetweenAndStatus(
+                        Long customerId, Long subscriptionId, LocalDate startDate, LocalDate endDate,
+                        DeliveryRecord.DeliveryStatus status);
 }

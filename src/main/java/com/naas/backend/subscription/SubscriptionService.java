@@ -44,7 +44,8 @@ public class SubscriptionService {
 
         List<Subscription> existingSubscriptions = subscriptionRepository.findByCustomerIdAndStatus(customerId,
                 SubscriptionStatus.ACTIVE);
-        java.util.List<Subscription> newSubscriptions = new java.util.ArrayList<>();
+
+        java.util.List<Publication> requestedPublications = new java.util.ArrayList<>();
 
         for (Long pubId : request.getPublicationIds()) {
             if (pubId == null) {
@@ -54,24 +55,25 @@ public class SubscriptionService {
                     .orElseThrow(() -> new RuntimeException("Publication not found with id: " + pubId));
 
             boolean alreadySubscribed = existingSubscriptions.stream()
-                    .anyMatch(sub -> sub.getPublication().getId().equals(publication.getId()));
+                    .filter(sub -> sub.getPublications() != null)
+                    .flatMap(sub -> sub.getPublications().stream())
+                    .anyMatch(pub -> pub.getId().equals(publication.getId()));
             if (alreadySubscribed) {
                 throw new RuntimeException("Already subscribed to publication: " + publication.getName());
             }
-
-            Subscription subscription = Subscription.builder()
-                    .customer(customer)
-                    .publication(publication)
-                    .startDate(request.getStartDate())
-                    .status(SubscriptionStatus.ACTIVE)
-                    .build();
-
-            newSubscriptions.add(subscription);
+            requestedPublications.add(publication);
         }
 
-        return subscriptionRepository.saveAll(newSubscriptions).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        Subscription subscription = Subscription.builder()
+                .customer(customer)
+                .publications(requestedPublications)
+                .startDate(request.getStartDate())
+                .status(SubscriptionStatus.ACTIVE)
+                .build();
+
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+
+        return List.of(mapToResponse(savedSubscription));
     }
 
     public SubscriptionResponse cancelSubscription(Long customerId, Long subscriptionId,
@@ -151,10 +153,17 @@ public class SubscriptionService {
     }
 
     private SubscriptionResponse mapToResponse(Subscription subscription) {
+        Long firstPubId = subscription.getPublications() == null || subscription.getPublications().isEmpty() ? null
+                : subscription.getPublications().get(0).getId();
+        String pubNames = subscription.getPublications() == null || subscription.getPublications().isEmpty() ? ""
+                : subscription.getPublications().stream()
+                        .map(Publication::getName)
+                        .collect(Collectors.joining(", "));
+
         return SubscriptionResponse.builder()
                 .id(subscription.getId())
-                .publicationId(subscription.getPublication().getId())
-                .publicationName(subscription.getPublication().getName())
+                .publicationId(firstPubId)
+                .publicationName(pubNames)
                 .status(subscription.getStatus())
                 .startDate(subscription.getStartDate())
                 .endDate(subscription.getEndDate())
