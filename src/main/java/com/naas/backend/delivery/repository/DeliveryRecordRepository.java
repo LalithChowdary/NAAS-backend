@@ -17,4 +17,8 @@ public interface DeliveryRecordRepository extends JpaRepository<DeliveryRecord, 
 
     List<DeliveryRecord> findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
             Long deliveryPersonId, LocalDate startDate, LocalDate endDate, DeliveryRecord.DeliveryStatus status);
+
+    long countByCustomerIdAndPublicationIdAndDeliveryDateBetweenAndStatus(
+            Long customerId, Long publicationId, LocalDate startDate, LocalDate endDate,
+            DeliveryRecord.DeliveryStatus status);
 }
