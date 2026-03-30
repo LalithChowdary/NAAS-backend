@@ -26,6 +26,18 @@ public class DeliveryPersonController {
         return ResponseEntity.ok(deliveryPersonService.getByEmail(auth.getName()));
     }
 
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<DeliveryPerson> updateMe(@RequestBody java.util.Map<String, String> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(deliveryPersonService.updateProfile(
+                auth.getName(),
+                body.get("name"),
+                body.get("phone"),
+                body.get("payoutDetails")
+        ));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<DeliveryPerson>> getAll() {
