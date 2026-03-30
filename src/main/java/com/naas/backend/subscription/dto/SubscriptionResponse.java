@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 public class SubscriptionResponse {
     private Long id;
+    private Long customerId;
+    private String customerName;
     private Long publicationId;
     private String publicationName;
     private SubscriptionStatus status;

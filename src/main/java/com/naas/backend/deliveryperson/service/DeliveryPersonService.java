@@ -69,6 +69,16 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.save(person);
     }
 
+    public DeliveryPerson updateDeliveryPersonAsAdmin(Long id, String name, String phone, String employeeId, String assignedArea, String payoutDetails) {
+        DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
+        if (name != null) person.setName(name);
+        if (phone != null) person.setPhone(phone);
+        if (employeeId != null) person.setEmployeeId(employeeId);
+        if (assignedArea != null) person.setAssignedArea(assignedArea);
+        if (payoutDetails != null) person.setPayoutDetails(payoutDetails);
+        return deliveryPersonRepository.save(person);
+    }
+
     public Double calculatePayout(Long deliveryPersonId, LocalDate start, LocalDate end) {
         List<DeliveryRecord> deliveries = deliveryRecordRepository
                 .findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(

@@ -59,6 +59,19 @@ public class DeliveryPersonController {
         return ResponseEntity.ok(deliveryPersonService.assignArea(id, area));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(deliveryPersonService.updateDeliveryPersonAsAdmin(
+                id,
+                body.get("name"),
+                body.get("phone"),
+                body.get("employeeId"),
+                body.get("assignedArea"),
+                body.get("payoutDetails")
+        ));
+    }
+
     @GetMapping("/{id}/payout")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")
     public ResponseEntity<Double> calculatePayout(@PathVariable Long id, @RequestParam String start,

@@ -21,6 +21,11 @@ public class AdminSubscriptionController {
 
     private final SubscriptionService subscriptionService;
 
+    @GetMapping
+    public ResponseEntity<List<SubscriptionResponse>> getAllSubscriptions() {
+        return ResponseEntity.ok(subscriptionService.getAllSubscriptions());
+    }
+
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<List<SubscriptionResponse>> getCustomerSubscriptions(@PathVariable Long customerId) {
         return ResponseEntity.ok(subscriptionService.getCustomerSubscriptions(customerId));

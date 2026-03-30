@@ -141,6 +141,12 @@ public class SubscriptionService {
                 .collect(Collectors.toList());
     }
 
+    public List<SubscriptionResponse> getAllSubscriptions() {
+        return subscriptionRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<GlobalDeliveryPauseResponse> getCustomerGlobalPauses(Long customerId) {
         return globalDeliveryPauseRepository.findByCustomerId(customerId).stream()
                 .map(pause -> GlobalDeliveryPauseResponse.builder()
@@ -162,6 +168,8 @@ public class SubscriptionService {
 
         return SubscriptionResponse.builder()
                 .id(subscription.getId())
+                .customerId(subscription.getCustomer() != null ? subscription.getCustomer().getId() : null)
+                .customerName(subscription.getCustomer() != null ? subscription.getCustomer().getName() : null)
                 .publicationId(firstPubId)
                 .publicationName(pubNames)
                 .status(subscription.getStatus())

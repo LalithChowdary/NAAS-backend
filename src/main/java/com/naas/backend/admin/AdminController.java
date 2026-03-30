@@ -93,4 +93,20 @@ public class AdminController {
         customerService.deleteCustomer(id);
         return ResponseEntity.ok("Customer deactivated successfully");
     }
+
+    // ----------------------------------------------------------------
+    // Admin Profile Management
+    // ----------------------------------------------------------------
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> getMyProfile(org.springframework.security.core.Authentication authentication) {
+        return ResponseEntity.ok(adminService.getMyProfile(authentication.getName()));
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> updateMyProfile(org.springframework.security.core.Authentication authentication, @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(adminService.updateMyProfile(authentication.getName(), body));
+    }
 }

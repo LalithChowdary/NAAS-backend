@@ -81,4 +81,28 @@ public class AdminService {
         response.put("name", request.getName());
         return response;
     }
+
+    public Map<String, String> getMyProfile(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        Admin admin = adminRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Admin not found"));
+        Map<String, String> response = new HashMap<>();
+        if (admin.getName() != null) response.put("name", admin.getName());
+        if (admin.getPhone() != null) response.put("phone", admin.getPhone());
+        if (admin.getEmployeeId() != null) response.put("employeeId", admin.getEmployeeId());
+        response.put("email", email);
+        return response;
+    }
+
+    @Transactional
+    public Map<String, String> updateMyProfile(String email, Map<String, String> updates) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        Admin admin = adminRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Admin not found"));
+        
+        if (updates.containsKey("name")) admin.setName(updates.get("name"));
+        if (updates.containsKey("phone")) admin.setPhone(updates.get("phone"));
+        if (updates.containsKey("employeeId")) admin.setEmployeeId(updates.get("employeeId"));
+        
+        adminRepository.save(admin);
+        return getMyProfile(email);
+    }
 }
