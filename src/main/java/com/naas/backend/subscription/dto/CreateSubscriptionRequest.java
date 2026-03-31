@@ -7,6 +7,13 @@ import java.util.List;
 
 @Data
 public class CreateSubscriptionRequest {
-    private List<Long> publicationIds;
+    private List<ItemRequest> items;
     private LocalDate startDate;
+
+    @Data
+    public static class ItemRequest {
+        private Long publicationId;
+        private String frequency;
+        private String customDeliveryDays;
+    }
 }

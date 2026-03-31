@@ -63,19 +63,28 @@ public class DeliveryPersonService {
 
     public DeliveryPerson updateProfile(String email, String name, String phone, String payoutDetails) {
         DeliveryPerson person = getByEmail(email);
-        if (name != null) person.setName(name);
-        if (phone != null) person.setPhone(phone);
-        if (payoutDetails != null) person.setPayoutDetails(payoutDetails);
+        if (name != null)
+            person.setName(name);
+        if (phone != null)
+            person.setPhone(phone);
+        if (payoutDetails != null)
+            person.setPayoutDetails(payoutDetails);
         return deliveryPersonRepository.save(person);
     }
 
-    public DeliveryPerson updateDeliveryPersonAsAdmin(Long id, String name, String phone, String employeeId, String assignedArea, String payoutDetails) {
+    public DeliveryPerson updateDeliveryPersonAsAdmin(Long id, String name, String phone, String employeeId,
+            String assignedArea, String payoutDetails) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
-        if (name != null) person.setName(name);
-        if (phone != null) person.setPhone(phone);
-        if (employeeId != null) person.setEmployeeId(employeeId);
-        if (assignedArea != null) person.setAssignedArea(assignedArea);
-        if (payoutDetails != null) person.setPayoutDetails(payoutDetails);
+        if (name != null)
+            person.setName(name);
+        if (phone != null)
+            person.setPhone(phone);
+        if (employeeId != null)
+            person.setEmployeeId(employeeId);
+        if (assignedArea != null)
+            person.setAssignedArea(assignedArea);
+        if (payoutDetails != null)
+            person.setPayoutDetails(payoutDetails);
         return deliveryPersonRepository.save(person);
     }
 
@@ -88,9 +97,9 @@ public class DeliveryPersonService {
         for (DeliveryRecord record : deliveries) {
             com.naas.backend.subscription.Subscription sub = subscriptionRepository.findById(record.getSubscriptionId())
                     .orElse(null);
-            if (sub != null && sub.getPublications() != null) {
-                for (com.naas.backend.publication.Publication pub : sub.getPublications()) {
-                    totalValue += pub.getPrice().doubleValue();
+            if (sub != null && sub.getItems() != null) {
+                for (com.naas.backend.subscription.SubscriptionItem item : sub.getItems()) {
+                    totalValue += item.getPublication().getPrice().doubleValue();
                 }
             }
         }

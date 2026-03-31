@@ -11,12 +11,22 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
+import com.naas.backend.auth.entity.User;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 @RestController
 @RequestMapping("/api/delivery")
 @RequiredArgsConstructor
 public class DeliveryController {
 
     private final DeliveryService deliveryService;
+
+    @GetMapping("/customer")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<CustomerDeliveryResponse>> getCustomerDeliveries(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(deliveryService.getCustomerDeliveries(user));
+    }
 
     @GetMapping("/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")

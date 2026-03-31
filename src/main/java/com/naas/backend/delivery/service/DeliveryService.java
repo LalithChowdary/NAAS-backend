@@ -16,6 +16,12 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
+import com.naas.backend.subscription.SubscriptionItem;
+import com.naas.backend.auth.entity.User;
+import com.naas.backend.customer.Customer;
+import com.naas.backend.customer.CustomerRepository;
+
 @Service
 @RequiredArgsConstructor
 public class DeliveryService {
@@ -23,6 +29,43 @@ public class DeliveryService {
     private final SubscriptionRepository subscriptionRepository;
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final DeliveryPersonRepository deliveryPersonRepository;
+    private final CustomerRepository customerRepository;
+
+    public List<CustomerDeliveryResponse> getCustomerDeliveries(User user) {
+        Customer customer = customerRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        List<DeliveryRecord> records = deliveryRecordRepository
+                .findByCustomerIdOrderByDeliveryDateDesc(customer.getId());
+
+        List<CustomerDeliveryResponse> responses = new ArrayList<>();
+
+        for (DeliveryRecord record : records) {
+            Subscription sub = subscriptionRepository.findById(record.getSubscriptionId()).orElse(null);
+            if (sub == null)
+                continue;
+
+            String pubNames = (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
+                    : sub.getItems().stream().map(item -> item.getPublication().getName())
+                            .collect(Collectors.joining(", "));
+
+            double dailyCost = 0.0;
+            if (sub.getItems() != null) {
+                for (SubscriptionItem item : sub.getItems()) {
+                    dailyCost += item.getPublication().getPrice();
+                }
+            }
+
+            responses.add(CustomerDeliveryResponse.builder()
+                    .id(record.getId())
+                    .deliveryDate(record.getDeliveryDate())
+                    .status(record.getStatus().name())
+                    .publicationName(pubNames)
+                    .dailyCost(dailyCost)
+                    .build());
+        }
+
+        return responses;
+    }
 
     public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
         List<DeliveryRecord> records;
@@ -48,8 +91,8 @@ public class DeliveryService {
             map.put("address", sub.getCustomer().getAddress()
                     + (sub.getCustomer().getArea() != null ? " (" + sub.getCustomer().getArea() + ")" : ""));
             map.put("publicationName",
-                    (sub.getPublications() == null || sub.getPublications().isEmpty()) ? ""
-                            : sub.getPublications().stream().map(com.naas.backend.publication.Publication::getName)
+                    (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
+                            : sub.getItems().stream().map(item -> item.getPublication().getName())
                                     .collect(Collectors.joining(", ")));
             map.put("deliveryStatus", record.getStatus().name());
             map.put("assignedTo", person != null ? person.getName() : "Unknown");
@@ -75,8 +118,8 @@ public class DeliveryService {
         if (record.getId() == null) {
             Subscription sub = subscriptionRepository.findById(subscriptionId).orElseThrow();
             record.setCustomerId(sub.getCustomer().getId());
-            record.setPublicationId((sub.getPublications() == null || sub.getPublications().isEmpty()) ? 0L
-                    : sub.getPublications().get(0).getId());
+            record.setPublicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? 0L
+                    : sub.getItems().get(0).getPublication().getId());
         }
 
         record.setStatus(status);
@@ -166,8 +209,8 @@ public class DeliveryService {
                     .deliveryPersonId(assignedPerson.getId())
                     .subscriptionId(sub.getId())
                     .customerId(sub.getCustomer().getId())
-                    .publicationId((sub.getPublications() == null || sub.getPublications().isEmpty()) ? 0L
-                            : sub.getPublications().get(0).getId())
+                    .publicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? 0L
+                            : sub.getItems().get(0).getPublication().getId())
                     .status(DeliveryRecord.DeliveryStatus.PENDING)
                     .build();
             deliveryRecordRepository.save(record);

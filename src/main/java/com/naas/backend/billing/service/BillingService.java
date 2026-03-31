@@ -66,7 +66,8 @@ public class BillingService {
             }
 
             List<Subscription> subscriptions = subscriptionRepository.findByCustomerId(customer.getId());
-            if (subscriptions.isEmpty()) continue;
+            if (subscriptions.isEmpty())
+                continue;
 
             List<BillItem> billItems = new ArrayList<>();
             BigDecimal totalAmount = BigDecimal.ZERO;
@@ -77,8 +78,9 @@ public class BillingService {
                                 customer.getId(), sub.getId(), startDate, endDate,
                                 DeliveryRecord.DeliveryStatus.DELIVERED);
 
-                if (deliveriesCount > 0 && sub.getPublications() != null) {
-                    for (com.naas.backend.publication.Publication pub : sub.getPublications()) {
+                if (deliveriesCount > 0 && sub.getItems() != null) {
+                    for (com.naas.backend.subscription.SubscriptionItem itemSub : sub.getItems()) {
+                        com.naas.backend.publication.Publication pub = itemSub.getPublication();
                         BigDecimal pricePerUnit = BigDecimal.valueOf(pub.getPrice());
                         BigDecimal itemAmount = pricePerUnit.multiply(BigDecimal.valueOf(deliveriesCount));
 

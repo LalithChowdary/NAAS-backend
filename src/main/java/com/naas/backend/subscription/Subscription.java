@@ -28,9 +28,8 @@ public class Subscription {
     private Customer customer;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "subscription_publications", joinColumns = @JoinColumn(name = "subscription_id"), inverseJoinColumns = @JoinColumn(name = "publication_id"))
-    private java.util.List<Publication> publications = new java.util.ArrayList<>();
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private java.util.List<SubscriptionItem> items = new java.util.ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
