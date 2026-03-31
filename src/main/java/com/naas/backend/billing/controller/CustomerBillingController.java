@@ -2,6 +2,7 @@ package com.naas.backend.billing.controller;
 
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.billing.dto.BillResponseDTO;
+import com.naas.backend.billing.dto.PaymentResponseDTO;
 import com.naas.backend.billing.service.BillingService;
 import com.naas.backend.customer.Customer;
 import com.naas.backend.customer.CustomerRepository;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/customer/bills")
+@RequestMapping("/api/customer")
 @PreAuthorize("hasRole('CUSTOMER')")
 @RequiredArgsConstructor
 public class CustomerBillingController {
@@ -28,15 +29,20 @@ public class CustomerBillingController {
         return customer.getId();
     }
 
-    @GetMapping
+    @GetMapping("/bills")
     public ResponseEntity<List<BillResponseDTO>> getMyBills(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(billingService.getCustomerBills(getCustomerId(user)));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/bills/{id}")
     public ResponseEntity<BillResponseDTO> getMyBillDetail(
             @AuthenticationPrincipal User user,
             @PathVariable Long id) {
         return ResponseEntity.ok(billingService.getCustomerBillById(getCustomerId(user), id));
+    }
+
+    @GetMapping("/payments")
+    public ResponseEntity<List<PaymentResponseDTO>> getMyPayments(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(billingService.getCustomerPayments(getCustomerId(user)));
     }
 }
