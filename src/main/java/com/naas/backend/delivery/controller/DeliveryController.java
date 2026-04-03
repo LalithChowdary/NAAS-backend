@@ -40,7 +40,8 @@ public class DeliveryController {
 
     @GetMapping("/person/history")
     @PreAuthorize("hasRole('DELIVERY_PERSON')")
-    public ResponseEntity<List<DeliveryPersonHistoryResponse>> getDeliveryPersonHistory(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<DeliveryPersonHistoryResponse>> getDeliveryPersonHistory(
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(deliveryService.getDeliveryPersonHistory(user));
     }
 

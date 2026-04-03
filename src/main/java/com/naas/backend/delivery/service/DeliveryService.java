@@ -1,6 +1,5 @@
 package com.naas.backend.delivery.service;
 
-import com.naas.backend.delivery.dto.DeliveryScheduleResponse;
 import com.naas.backend.delivery.entity.DeliveryRecord;
 import com.naas.backend.delivery.repository.DeliveryRecordRepository;
 import com.naas.backend.deliveryperson.DeliveryPerson;
@@ -9,7 +8,8 @@ import com.naas.backend.subscription.Subscription;
 import com.naas.backend.subscription.SubscriptionRepository;
 import com.naas.backend.subscription.SubscriptionStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 
 import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
 import com.naas.backend.subscription.SubscriptionItem;
-
-import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
 import com.naas.backend.delivery.dto.DeliveryPersonHistoryResponse;
 import com.naas.backend.auth.entity.User;
 
@@ -34,6 +32,7 @@ public class DeliveryService {
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final DeliveryPersonRepository deliveryPersonRepository;
     private final CustomerRepository customerRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public List<CustomerDeliveryResponse> getCustomerDeliveries(User user) {
         Customer customer = customerRepository.findByUser(user)
@@ -71,8 +70,6 @@ public class DeliveryService {
         return responses;
     }
 
-    
-
     public List<DeliveryPersonHistoryResponse> getDeliveryPersonHistory(User user) {
         DeliveryPerson person = deliveryPersonRepository.findByUser(user).orElseThrow();
         List<DeliveryRecord> records = deliveryRecordRepository.findAll().stream()
@@ -82,11 +79,13 @@ public class DeliveryService {
 
         return records.stream().map(record -> {
             Subscription sub = subscriptionRepository.findById(record.getSubscriptionId()).orElse(null);
-            if (sub == null) return null;
-            
+            if (sub == null)
+                return null;
+
             double total = sub.getItems().stream().mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
-            String pubs = sub.getItems().stream().map(i -> i.getPublication().getName()).collect(java.util.stream.Collectors.joining(", "));
-            
+            String pubs = sub.getItems().stream().map(i -> i.getPublication().getName())
+                    .collect(java.util.stream.Collectors.joining(", "));
+
             return DeliveryPersonHistoryResponse.builder()
                     .id(record.getId())
                     .subscriptionId(sub.getId())
@@ -101,7 +100,7 @@ public class DeliveryService {
         }).filter(r -> r != null).collect(java.util.stream.Collectors.toList());
     }
 
-public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
+    public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
         List<DeliveryRecord> records;
         if (deliveryPersonId != null) {
             records = deliveryRecordRepository.findByDeliveryDateAndDeliveryPersonId(date, deliveryPersonId);
@@ -139,17 +138,16 @@ public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId,
 
     public void updateDeliveryStatus(LocalDate date, Long deliveryPersonId, Long subscriptionId,
             DeliveryRecord.DeliveryStatus status) {
-        DeliveryRecord record = deliveryRecordRepository.findByDeliveryDateAndSubscriptionId(date, subscriptionId)
-                .orElse(DeliveryRecord.builder()
-                        .deliveryDate(date)
-                        .deliveryPersonId(deliveryPersonId)
-                        .subscriptionId(subscriptionId)
-                        // Will fetch customer/publication if needed or default 0s if they are
-                        // decoupled,
-                        // but better to fetch sub to fill correctly.
-                        .build());
+        List<DeliveryRecord> records = deliveryRecordRepository.findByDeliveryDateAndSubscriptionId(date,
+                subscriptionId);
+        DeliveryRecord record = records.isEmpty() ? DeliveryRecord.builder()
+                .deliveryDate(date)
+                .deliveryPersonId(deliveryPersonId)
+                .subscriptionId(subscriptionId)
+                .build() : records.get(0);
 
         if (record.getId() == null) {
+            syncDeliveryRecordIdSequence();
             Subscription sub = subscriptionRepository.findById(subscriptionId).orElseThrow();
             record.setCustomerId(sub.getCustomer().getId());
             record.setPublicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? 0L
@@ -157,7 +155,7 @@ public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId,
         }
 
         record.setStatus(status);
-        deliveryRecordRepository.save(record);
+        saveDeliveryRecordWithRetry(record);
     }
 
     /**
@@ -178,6 +176,8 @@ public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId,
      * them on-the-fly.
      */
     public void generateSchedulesForDate(LocalDate date) {
+        syncDeliveryRecordIdSequence();
+
         List<Subscription> allActive = subscriptionRepository.findAll().stream()
                 .filter(s -> s.getStatus() == SubscriptionStatus.ACTIVE)
                 .collect(Collectors.toList());
@@ -209,9 +209,9 @@ public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId,
                 }
             }
 
-            Optional<DeliveryRecord> existingRecord = deliveryRecordRepository.findByDeliveryDateAndSubscriptionId(date,
+            boolean existingRecord = deliveryRecordRepository.existsByDeliveryDateAndSubscriptionId(date,
                     sub.getId());
-            if (existingRecord.isPresent()) {
+            if (existingRecord) {
                 continue;
             }
 
@@ -247,7 +247,37 @@ public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId,
                             : sub.getItems().get(0).getPublication().getId())
                     .status(DeliveryRecord.DeliveryStatus.PENDING)
                     .build();
+            saveDeliveryRecordWithRetry(record);
+        }
+    }
+
+    private void syncDeliveryRecordIdSequence() {
+        jdbcTemplate.queryForObject("""
+                SELECT setval(
+                        pg_get_serial_sequence('delivery_records', 'id'),
+                        COALESCE((SELECT MAX(id) FROM delivery_records), 0) + 1,
+                        false
+                )
+                """, Long.class);
+    }
+
+    private void saveDeliveryRecordWithRetry(DeliveryRecord record) {
+        try {
+            deliveryRecordRepository.save(record);
+        } catch (DataIntegrityViolationException ex) {
+            if (!isDeliveryRecordPrimaryKeyConflict(ex)) {
+                throw ex;
+            }
+
+            syncDeliveryRecordIdSequence();
             deliveryRecordRepository.save(record);
         }
+    }
+
+    private boolean isDeliveryRecordPrimaryKeyConflict(DataIntegrityViolationException ex) {
+        String message = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+        return message != null && message.contains("delivery_records_pkey");
     }
 }

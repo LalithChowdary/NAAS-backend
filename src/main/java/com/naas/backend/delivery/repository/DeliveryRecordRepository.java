@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DeliveryRecordRepository extends JpaRepository<DeliveryRecord, Long> {
@@ -15,7 +14,9 @@ public interface DeliveryRecordRepository extends JpaRepository<DeliveryRecord, 
 
         List<DeliveryRecord> findByDeliveryDate(LocalDate deliveryDate);
 
-        Optional<DeliveryRecord> findByDeliveryDateAndSubscriptionId(LocalDate deliveryDate, Long subscriptionId);
+        List<DeliveryRecord> findByDeliveryDateAndSubscriptionId(LocalDate deliveryDate, Long subscriptionId);
+
+        boolean existsByDeliveryDateAndSubscriptionId(LocalDate deliveryDate, Long subscriptionId);
 
         List<DeliveryRecord> findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
                         Long deliveryPersonId, LocalDate startDate, LocalDate endDate,
