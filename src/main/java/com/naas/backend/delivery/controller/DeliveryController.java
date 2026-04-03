@@ -1,19 +1,19 @@
 package com.naas.backend.delivery.controller;
 
-import com.naas.backend.delivery.dto.DeliveryScheduleResponse;
+import com.naas.backend.auth.entity.User;
+import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
+import com.naas.backend.delivery.dto.DeliveryPersonHistoryResponse;
 import com.naas.backend.delivery.entity.DeliveryRecord;
 import com.naas.backend.delivery.service.DeliveryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-
-import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
-import com.naas.backend.auth.entity.User;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/delivery")
@@ -30,12 +30,18 @@ public class DeliveryController {
 
     @GetMapping("/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")
-    public ResponseEntity<List<java.util.Map<String, Object>>> getDailySchedule(
+    public ResponseEntity<List<Map<String, Object>>> getDailySchedule(
             @RequestParam(required = false) Long deliveryPersonId,
             @RequestParam(required = false) String date) {
 
         LocalDate queryDate = date != null ? LocalDate.parse(date) : LocalDate.now();
         return ResponseEntity.ok(deliveryService.getDailyDeliverySchedule(deliveryPersonId, queryDate));
+    }
+
+    @GetMapping("/person/history")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<List<DeliveryPersonHistoryResponse>> getDeliveryPersonHistory(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(deliveryService.getDeliveryPersonHistory(user));
     }
 
     @PostMapping("/status")

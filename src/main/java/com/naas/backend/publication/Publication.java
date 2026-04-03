@@ -22,6 +22,9 @@ public class Publication {
     private Double price;
 
     private String description;
+    
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -50,6 +53,9 @@ public class Publication {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }

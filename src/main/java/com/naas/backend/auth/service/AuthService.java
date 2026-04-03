@@ -31,8 +31,27 @@ public class AuthService {
         private final AuthenticationManager authenticationManager;
 
         public AuthResponse login(LoginRequest request) {
-                authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                try {
+                        authenticationManager.authenticate(
+                                        new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                } catch (org.springframework.security.authentication.AccountStatusException e) {
+                        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new RuntimeException("Account disabled"));
+                        if (user.getRole() == User.Role.DELIVERY_PERSON) {
+                                DeliveryPerson dp = deliveryPersonRepository.findByUser(user).orElse(null);
+                                if (dp != null) {
+                                        if ("PENDING".equals(dp.getStatus())) {
+                                                throw new RuntimeException("Your application is still pending review.");
+                                        } else if ("REJECTED".equals(dp.getStatus())) {
+                                                throw new RuntimeException("Your application has been rejected.");
+                                        }
+                                }
+                        }
+                        throw new RuntimeException("Account disabled. Please contact support.");
+                } catch (org.springframework.security.authentication.BadCredentialsException e) {
+                        throw new RuntimeException("Invalid email or password");
+                } catch (Exception e) {
+                        throw new RuntimeException("Authentication failed");
+                }
 
                 User user = userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new RuntimeException("User not found"));

@@ -20,6 +20,7 @@ public class PublicationRequest {
     private Double price;
 
     private String description;
+    private String imageUrl;
 
     // Getters and Setters
     public String getName() { return name; }
@@ -33,4 +34,7 @@ public class PublicationRequest {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

@@ -43,6 +43,23 @@ public class DeliveryPersonController {
     public ResponseEntity<List<DeliveryPerson>> getAll() {
         return ResponseEntity.ok(deliveryPersonService.getAllDeliveryPersonnel());
     }
+    
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<DeliveryPerson>> getPendingRequests() {
+        return ResponseEntity.ok(deliveryPersonService.getPendingRequests());
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<DeliveryPerson> signup(@RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(deliveryPersonService.signupRequest(
+                body.get("name"),
+                body.get("email"),
+                body.get("password"),
+                body.get("phone"),
+                body.get("assignedArea")
+        ));
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -57,6 +74,36 @@ public class DeliveryPersonController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPerson> assignArea(@PathVariable Long id, @RequestParam String area) {
         return ResponseEntity.ok(deliveryPersonService.assignArea(id, area));
+    }
+    
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeliveryPerson> approve(@PathVariable Long id) {
+        return ResponseEntity.ok(deliveryPersonService.approveDeliveryPerson(id));
+    }
+    
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeliveryPerson> reject(@PathVariable Long id) {
+        return ResponseEntity.ok(deliveryPersonService.rejectDeliveryPerson(id));
+    }
+
+    @PutMapping("/{id}/toggleStatus")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeliveryPerson> toggleStatus(@PathVariable Long id, @RequestParam boolean active) {
+        return ResponseEntity.ok(deliveryPersonService.toggleStatus(id, active));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeliveryPerson> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(deliveryPersonService.getDeliveryPersonById(id));
+    }
+
+    @GetMapping("/{id}/deliveries")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.naas.backend.delivery.entity.DeliveryRecord>> getDeliveries(@PathVariable Long id) {
+        return ResponseEntity.ok(deliveryPersonService.getDeliveriesForDeliveryPerson(id));
     }
 
     @PutMapping("/{id}")

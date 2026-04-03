@@ -17,8 +17,16 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            return ResponseEntity.ok(authService.login(request));
+        } catch (RuntimeException e) {
+            String msg = e.getMessage();
+            if (msg != null && (msg.contains("pending review") || msg.contains("rejected") || msg.contains("Invalid email or password") || msg.contains("Account disabled"))) {
+                return ResponseEntity.status(403).body(java.util.Map.of("message", msg));
+            }
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Internal server error"));
+        }
     }
 
     @PostMapping("/register")

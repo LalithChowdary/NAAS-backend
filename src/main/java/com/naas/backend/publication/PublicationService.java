@@ -54,6 +54,7 @@ public class PublicationService {
         publication.setType(request.getType());
         publication.setPrice(request.getPrice());
         publication.setDescription(request.getDescription());
+        publication.setImageUrl(request.getImageUrl());
         
         Publication savedPublication = publicationRepository.save(publication);
         return toResponse(savedPublication);
@@ -74,6 +75,9 @@ public class PublicationService {
         }
         if (request.getDescription() != null) {
             publication.setDescription(request.getDescription());
+        }
+        if (request.getImageUrl() != null) {
+            publication.setImageUrl(request.getImageUrl());
         }
 
         Publication updatedPublication = publicationRepository.save(publication);
@@ -96,6 +100,7 @@ public class PublicationService {
         response.setType(publication.getType());
         response.setPrice(publication.getPrice());
         response.setDescription(publication.getDescription());
+        response.setImageUrl(publication.getImageUrl());
         response.setEnabled(publication.isEnabled());
         response.setCreatedAt(publication.getCreatedAt());
         return response;

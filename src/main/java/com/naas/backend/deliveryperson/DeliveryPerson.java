@@ -28,4 +28,7 @@ public class DeliveryPerson {
     private String employeeId;
     private String payoutDetails;
     private String assignedArea; // Area for delivery (matches Customer.area)
+    
+    @Builder.Default
+    private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 }

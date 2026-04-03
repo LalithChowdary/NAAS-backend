@@ -18,7 +18,11 @@ import java.util.stream.Collectors;
 
 import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
 import com.naas.backend.subscription.SubscriptionItem;
+
+import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
+import com.naas.backend.delivery.dto.DeliveryPersonHistoryResponse;
 import com.naas.backend.auth.entity.User;
+
 import com.naas.backend.customer.Customer;
 import com.naas.backend.customer.CustomerRepository;
 
@@ -67,7 +71,37 @@ public class DeliveryService {
         return responses;
     }
 
-    public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
+    
+
+    public List<DeliveryPersonHistoryResponse> getDeliveryPersonHistory(User user) {
+        DeliveryPerson person = deliveryPersonRepository.findByUser(user).orElseThrow();
+        List<DeliveryRecord> records = deliveryRecordRepository.findAll().stream()
+                .filter(r -> r.getDeliveryPersonId().equals(person.getId()))
+                .sorted((a, b) -> b.getDeliveryDate().compareTo(a.getDeliveryDate()))
+                .collect(java.util.stream.Collectors.toList());
+
+        return records.stream().map(record -> {
+            Subscription sub = subscriptionRepository.findById(record.getSubscriptionId()).orElse(null);
+            if (sub == null) return null;
+            
+            double total = sub.getItems().stream().mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
+            String pubs = sub.getItems().stream().map(i -> i.getPublication().getName()).collect(java.util.stream.Collectors.joining(", "));
+            
+            return DeliveryPersonHistoryResponse.builder()
+                    .id(record.getId())
+                    .subscriptionId(sub.getId())
+                    .deliveryDate(record.getDeliveryDate())
+                    .status(record.getStatus().name())
+                    .customerName(sub.getCustomer().getName())
+                    .customerAddress(sub.getCustomer().getAddress())
+                    .publications(pubs)
+                    .totalValue(total)
+                    .payout(total * 0.025)
+                    .build();
+        }).filter(r -> r != null).collect(java.util.stream.Collectors.toList());
+    }
+
+public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
         List<DeliveryRecord> records;
         if (deliveryPersonId != null) {
             records = deliveryRecordRepository.findByDeliveryDateAndDeliveryPersonId(date, deliveryPersonId);

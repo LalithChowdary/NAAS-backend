@@ -42,7 +42,46 @@ public class DeliveryPersonService {
                 .phone(phone)
                 .employeeId(employeeId)
                 .assignedArea(assignedArea)
+                .status("APPROVED")
                 .build();
+        return deliveryPersonRepository.save(person);
+    }
+
+    public DeliveryPerson signupRequest(String name, String email, String password, String phone, String assignedArea) {
+        User user = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .role(User.Role.DELIVERY_PERSON)
+                .active(false) // Pending admin approval
+                .build();
+        userRepository.save(user);
+
+        DeliveryPerson person = DeliveryPerson.builder()
+                .user(user)
+                .name(name)
+                .phone(phone)
+                .assignedArea(assignedArea)
+                .status("PENDING")
+                .build();
+        return deliveryPersonRepository.save(person);
+    }
+    
+    public List<DeliveryPerson> getPendingRequests() {
+        return deliveryPersonRepository.findByStatus("PENDING");
+    }
+    
+    public DeliveryPerson approveDeliveryPerson(Long id) {
+        DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
+        person.setStatus("APPROVED");
+        User user = person.getUser();
+        user.setActive(true);
+        userRepository.save(user);
+        return deliveryPersonRepository.save(person);
+    }
+    
+    public DeliveryPerson rejectDeliveryPerson(Long id) {
+        DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
+        person.setStatus("REJECTED");
         return deliveryPersonRepository.save(person);
     }
 
@@ -104,5 +143,23 @@ public class DeliveryPersonService {
             }
         }
         return totalValue * 0.025; // 2.5% agency rule
+    }
+
+    public DeliveryPerson toggleStatus(Long id, boolean active) {
+        DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
+        User user = person.getUser();
+        user.setActive(active);
+        userRepository.save(user);
+        return person;
+    }
+
+    public DeliveryPerson getDeliveryPersonById(Long id) {
+        return deliveryPersonRepository.findById(id).orElseThrow();
+    }
+
+    public List<DeliveryRecord> getDeliveriesForDeliveryPerson(Long id) {
+        return deliveryRecordRepository.findAll().stream()
+                .filter(record -> record.getDeliveryPersonId().equals(id))
+                .toList();
     }
 }

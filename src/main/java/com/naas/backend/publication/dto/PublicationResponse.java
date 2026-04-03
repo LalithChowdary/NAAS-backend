@@ -9,6 +9,7 @@ public class PublicationResponse {
     private PublicationType type;
     private Double price;
     private String description;
+    private String imageUrl;
     private boolean enabled;
     private LocalDateTime createdAt;
 
@@ -27,6 +28,9 @@ public class PublicationResponse {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
