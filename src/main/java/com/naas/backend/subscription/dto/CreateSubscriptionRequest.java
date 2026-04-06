@@ -9,6 +9,7 @@ import java.util.List;
 public class CreateSubscriptionRequest {
     private List<ItemRequest> items;
     private LocalDate startDate;
+    private Long addressId;
 
     @Data
     public static class ItemRequest {

@@ -14,8 +14,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByUserId(Long userId);
 
-    List<Customer> findByNameContainingIgnoreCaseOrPhoneContainingOrCityContainingIgnoreCase(
-            String name, String phone, String city);
+    List<Customer> findByNameContainingIgnoreCaseOrPhoneContaining(String name, String phone);
 
     List<Customer> findAllByOrderByIdDesc();
 }

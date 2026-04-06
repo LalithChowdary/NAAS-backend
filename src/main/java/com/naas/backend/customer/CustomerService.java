@@ -30,10 +30,6 @@ public class CustomerService {
                 .name(customer.getName())
                 .email(customer.getUser().getEmail())
                 .phone(customer.getPhone())
-                .address(customer.getAddress())
-                .city(customer.getCity())
-                .pincode(customer.getPincode())
-                .area(customer.getArea())
                 .active(customer.isActive())
                 .createdAt(customer.getCreatedAt())
                 .build();
@@ -58,14 +54,6 @@ public class CustomerService {
             customer.setName(request.getName());
         if (request.getPhone() != null)
             customer.setPhone(request.getPhone());
-        if (request.getAddress() != null)
-            customer.setAddress(request.getAddress());
-        if (request.getCity() != null)
-            customer.setCity(request.getCity());
-        if (request.getPincode() != null)
-            customer.setPincode(request.getPincode());
-        if (request.getArea() != null)
-            customer.setArea(request.getArea());
 
         customerRepository.save(customer);
         return toResponse(customer);
@@ -95,7 +83,7 @@ public class CustomerService {
 
     public List<CustomerResponse> searchCustomers(String query) {
         return customerRepository
-                .findByNameContainingIgnoreCaseOrPhoneContainingOrCityContainingIgnoreCase(query, query, query)
+                .findByNameContainingIgnoreCaseOrPhoneContaining(query, query)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -125,10 +113,6 @@ public class CustomerService {
                 .user(user)
                 .name(request.getName())
                 .phone(request.getPhone())
-                .address(request.getAddress())
-                .city(request.getCity())
-                .pincode(request.getPincode())
-                .area(request.getArea())
                 .active(true)
                 .build();
         customerRepository.save(customer);
@@ -145,14 +129,6 @@ public class CustomerService {
             customer.setName(request.getName());
         if (request.getPhone() != null)
             customer.setPhone(request.getPhone());
-        if (request.getAddress() != null)
-            customer.setAddress(request.getAddress());
-        if (request.getCity() != null)
-            customer.setCity(request.getCity());
-        if (request.getPincode() != null)
-            customer.setPincode(request.getPincode());
-        if (request.getArea() != null)
-            customer.setArea(request.getArea());
 
         customerRepository.save(customer);
         return toResponse(customer);

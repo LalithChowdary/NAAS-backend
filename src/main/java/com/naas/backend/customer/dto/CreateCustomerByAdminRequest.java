@@ -20,8 +20,4 @@ public class CreateCustomerByAdminRequest {
     private String password;
 
     private String phone;
-    private String address;
-    private String city;
-    private String pincode;
-    private String area;
 }

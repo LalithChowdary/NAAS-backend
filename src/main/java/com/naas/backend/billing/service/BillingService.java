@@ -255,7 +255,7 @@ public class BillingService {
                 .id(bill.getId())
                 .customerId(bill.getCustomer().getId())
                 .customerName(bill.getCustomer().getName())
-                .customerAddress(bill.getCustomer().getAddress())
+                .customerAddress("Address fetched from subscription/delivery")
                 .billingMonth(bill.getBillingMonth())
                 .totalAmount(bill.getTotalAmount())
                 .dueDate(bill.getDueDate())

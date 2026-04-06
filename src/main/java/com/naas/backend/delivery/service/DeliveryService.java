@@ -92,7 +92,7 @@ public class DeliveryService {
                     .deliveryDate(record.getDeliveryDate())
                     .status(record.getStatus().name())
                     .customerName(sub.getCustomer().getName())
-                    .customerAddress(sub.getCustomer().getAddress())
+                    .customerAddress(sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address")
                     .publications(pubs)
                     .totalValue(total)
                     .payout(total * 0.025)
@@ -121,8 +121,7 @@ public class DeliveryService {
             map.put("subscriptionId", sub.getId());
             map.put("customerId", sub.getCustomer().getId());
             map.put("customerName", sub.getCustomer().getName());
-            map.put("address", sub.getCustomer().getAddress()
-                    + (sub.getCustomer().getArea() != null ? " (" + sub.getCustomer().getArea() + ")" : ""));
+            map.put("address", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address");
             map.put("publicationName",
                     (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
                             : sub.getItems().stream().map(item -> item.getPublication().getName())
@@ -215,7 +214,7 @@ public class DeliveryService {
                 continue;
             }
 
-            String area = sub.getCustomer().getArea();
+            String area = ""; // Deprecated field
             List<DeliveryPerson> eligible = new ArrayList<>();
 
             if (area != null && !area.trim().isEmpty()) {

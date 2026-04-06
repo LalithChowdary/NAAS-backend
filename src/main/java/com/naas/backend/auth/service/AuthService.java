@@ -84,9 +84,6 @@ public class AuthService {
                                 .user(user)
                                 .name(request.getName())
                                 .phone(request.getPhone())
-                                .address(request.getAddress())
-                                .city(request.getCity())
-                                .pincode(request.getPincode())
                                 .build();
                 customerRepository.save(customer);
 

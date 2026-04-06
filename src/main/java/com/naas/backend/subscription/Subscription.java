@@ -27,6 +27,10 @@ public class Subscription {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @ManyToOne
+    @JoinColumn(name = "customer_address_id")
+    private com.naas.backend.customer.CustomerAddress customerAddress;
+
     @Builder.Default
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private java.util.List<SubscriptionItem> items = new java.util.ArrayList<>();

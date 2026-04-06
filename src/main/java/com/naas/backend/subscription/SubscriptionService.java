@@ -21,6 +21,7 @@ public class SubscriptionService {
         private final GlobalDeliveryPauseRepository globalDeliveryPauseRepository;
         private final CustomerRepository customerRepository;
         private final PublicationRepository publicationRepository;
+        private final com.naas.backend.customer.CustomerAddressRepository customerAddressRepository;
 
         private static final int ADVANCE_NOTICE_DAYS = 7;
 
@@ -42,11 +43,24 @@ public class SubscriptionService {
                         throw new IllegalArgumentException("At least one publication must be selected");
                 }
 
+                if (request.getAddressId() == null) {
+                        throw new IllegalArgumentException("Delivery address must be selected");
+                }
+                
+                com.naas.backend.customer.CustomerAddress customerAddress = customerAddressRepository
+                                .findById(request.getAddressId())
+                                .orElseThrow(() -> new IllegalArgumentException("Delivery address not found"));
+                                
+                if (!customerAddress.getCustomer().getId().equals(customerId)) {
+                        throw new IllegalArgumentException("Delivery address does not belong to customer");
+                }
+
                 List<Subscription> existingSubscriptions = subscriptionRepository.findByCustomerIdAndStatus(customerId,
                                 SubscriptionStatus.ACTIVE);
 
                 Subscription subscription = Subscription.builder()
                                 .customer(customer)
+                                .customerAddress(customerAddress)
                                 .startDate(request.getStartDate())
                                 .status(SubscriptionStatus.ACTIVE)
                                 .build();

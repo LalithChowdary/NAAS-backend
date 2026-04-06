@@ -12,7 +12,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     List<Subscription> findByCustomerIdAndStatus(Long customerId, SubscriptionStatus status);
 
-    List<Subscription> findByCustomer_AreaAndStatus(String area, SubscriptionStatus status);
-
     Optional<Subscription> findByIdAndCustomerId(Long id, Long customerId);
 }
