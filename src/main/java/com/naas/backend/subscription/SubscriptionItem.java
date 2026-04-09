@@ -43,6 +43,17 @@ public class SubscriptionItem {
     @Column(name = "custom_delivery_days")
     private String customDeliveryDays;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private SubscriptionItemStatus status = SubscriptionItemStatus.ACTIVE;
+
+    @Column(name = "stop_start_date")
+    private LocalDate stopStartDate;
+
+    @Column(name = "stop_end_date")
+    private LocalDate stopEndDate;
+
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

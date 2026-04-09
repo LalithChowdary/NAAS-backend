@@ -138,6 +138,33 @@ public class SubscriptionService {
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
 
+        public SubscriptionResponse updateItemStatus(UUID customerId, UUID subscriptionId, UUID itemId, ItemStatusRequest request) {
+                Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
+                                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+                SubscriptionItem item = subscription.getItems().stream()
+                        .filter(i -> i.getId().equals(itemId))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Subscription item not found"));
+
+                if (request.getStatus() == SubscriptionItemStatus.REMOVED || request.getStatus() == SubscriptionItemStatus.SUSPENDED) {
+                        LocalDate checkDate = request.getStopStartDate() != null ? request.getStopStartDate() : LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS);
+                        validateAdvanceNotice(checkDate);
+                }
+
+                if (request.getStatus() != null) {
+                        item.setStatus(request.getStatus());
+                }
+                if (request.getStopStartDate() != null) {
+                        item.setStopStartDate(request.getStopStartDate());
+                }
+                if (request.getStopEndDate() != null) {
+                        item.setStopEndDate(request.getStopEndDate());
+                }
+
+                return mapToResponse(subscriptionRepository.save(subscription));
+        }
+
         public GlobalDeliveryPauseResponse addGlobalPause(UUID customerId, GlobalDeliveryPauseRequest request) {
                 validateAdvanceNotice(request.getStartDate());
                 if (request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
@@ -206,6 +233,9 @@ public class SubscriptionService {
                                                                 : null)
                                                 .frequency(item.getFrequency())
                                                 .customDeliveryDays(item.getCustomDeliveryDays())
+                                                .status(item.getStatus())
+                                                .stopStartDate(item.getStopStartDate())
+                                                .stopEndDate(item.getStopEndDate())
                                                 .build()).collect(Collectors.toList());
 
                 return SubscriptionResponse.builder()

@@ -41,6 +41,12 @@ public class DeliveryRecord {
     @Column(nullable = false)
     private DeliveryStatus status;
 
+    @Column(name = "hub_id")
+    private UUID hubId;
+
+    @Column(name = "route_sequence")
+    private Integer routeSequence;
+
     public enum DeliveryStatus {
         PENDING,
         DELIVERED,

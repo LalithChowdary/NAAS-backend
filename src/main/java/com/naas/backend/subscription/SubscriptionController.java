@@ -9,8 +9,8 @@ import com.naas.backend.subscription.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -77,5 +77,14 @@ public class SubscriptionController {
             @AuthenticationPrincipal User user,
             @RequestBody GlobalDeliveryPauseRequest request) {
         return ResponseEntity.ok(subscriptionService.addGlobalPause(getCustomerId(user), request));
+    }
+
+    @PatchMapping("/{subscriptionId}/items/{itemId}")
+    public ResponseEntity<SubscriptionResponse> updateItemStatus(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID subscriptionId,
+            @PathVariable UUID itemId,
+            @RequestBody ItemStatusRequest request) {
+        return ResponseEntity.ok(subscriptionService.updateItemStatus(getCustomerId(user), subscriptionId, itemId, request));
     }
 }
