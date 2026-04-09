@@ -1,5 +1,7 @@
 package com.naas.backend.subscription.dto;
 
+import java.util.UUID;
+
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -9,11 +11,11 @@ import java.util.List;
 public class CreateSubscriptionRequest {
     private List<ItemRequest> items;
     private LocalDate startDate;
-    private Long addressId;
+    private UUID addressId;
 
     @Data
     public static class ItemRequest {
-        private Long publicationId;
+        private UUID publicationId;
         private String frequency;
         private String customDeliveryDays;
     }

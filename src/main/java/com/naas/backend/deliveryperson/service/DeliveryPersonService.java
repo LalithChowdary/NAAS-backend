@@ -1,5 +1,7 @@
 package com.naas.backend.deliveryperson.service;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.auth.repository.UserRepository;
 import com.naas.backend.delivery.entity.DeliveryRecord;
@@ -27,7 +29,7 @@ public class DeliveryPersonService {
     private final com.naas.backend.subscription.SubscriptionRepository subscriptionRepository;
 
     public DeliveryPerson createDeliveryPerson(String name, String email, String password, String phone,
-            String employeeId, String assignedArea) {
+            String employeeId) {
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
@@ -41,13 +43,13 @@ public class DeliveryPersonService {
                 .name(name)
                 .phone(phone)
                 .employeeId(employeeId)
-                .assignedArea(assignedArea)
+                
                 .status("APPROVED")
                 .build();
         return deliveryPersonRepository.save(person);
     }
 
-    public DeliveryPerson signupRequest(String name, String email, String password, String phone, String assignedArea) {
+    public DeliveryPerson signupRequest(String name, String email, String password, String phone) {
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
@@ -60,7 +62,7 @@ public class DeliveryPersonService {
                 .user(user)
                 .name(name)
                 .phone(phone)
-                .assignedArea(assignedArea)
+                
                 .status("PENDING")
                 .build();
         return deliveryPersonRepository.save(person);
@@ -70,7 +72,7 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.findByStatus("PENDING");
     }
     
-    public DeliveryPerson approveDeliveryPerson(Long id) {
+    public DeliveryPerson approveDeliveryPerson(UUID id) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         person.setStatus("APPROVED");
         User user = person.getUser();
@@ -79,7 +81,7 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.save(person);
     }
     
-    public DeliveryPerson rejectDeliveryPerson(Long id) {
+    public DeliveryPerson rejectDeliveryPerson(UUID id) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         person.setStatus("REJECTED");
         return deliveryPersonRepository.save(person);
@@ -93,13 +95,6 @@ public class DeliveryPersonService {
         User user = userRepository.findByEmail(email).orElseThrow();
         return deliveryPersonRepository.findByUser(user).orElseThrow();
     }
-
-    public DeliveryPerson assignArea(Long id, String area) {
-        DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
-        person.setAssignedArea(area);
-        return deliveryPersonRepository.save(person);
-    }
-
     public DeliveryPerson updateProfile(String email, String name, String phone, String payoutDetails) {
         DeliveryPerson person = getByEmail(email);
         if (name != null)
@@ -111,8 +106,7 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.save(person);
     }
 
-    public DeliveryPerson updateDeliveryPersonAsAdmin(Long id, String name, String phone, String employeeId,
-            String assignedArea, String payoutDetails) {
+    public DeliveryPerson updateDeliveryPersonAsAdmin(UUID id, String name, String phone, String employeeId, String payoutDetails) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         if (name != null)
             person.setName(name);
@@ -120,14 +114,13 @@ public class DeliveryPersonService {
             person.setPhone(phone);
         if (employeeId != null)
             person.setEmployeeId(employeeId);
-        if (assignedArea != null)
-            person.setAssignedArea(assignedArea);
+        
         if (payoutDetails != null)
             person.setPayoutDetails(payoutDetails);
         return deliveryPersonRepository.save(person);
     }
 
-    public Double calculatePayout(Long deliveryPersonId, LocalDate start, LocalDate end) {
+    public Double calculatePayout(UUID deliveryPersonId, LocalDate start, LocalDate end) {
         List<DeliveryRecord> deliveries = deliveryRecordRepository
                 .findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
                         deliveryPersonId, start, end, DeliveryRecord.DeliveryStatus.DELIVERED);
@@ -145,7 +138,7 @@ public class DeliveryPersonService {
         return totalValue * 0.025; // 2.5% agency rule
     }
 
-    public DeliveryPerson toggleStatus(Long id, boolean active) {
+    public DeliveryPerson toggleStatus(UUID id, boolean active) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         User user = person.getUser();
         user.setActive(active);
@@ -153,11 +146,11 @@ public class DeliveryPersonService {
         return person;
     }
 
-    public DeliveryPerson getDeliveryPersonById(Long id) {
+    public DeliveryPerson getDeliveryPersonById(UUID id) {
         return deliveryPersonRepository.findById(id).orElseThrow();
     }
 
-    public List<DeliveryRecord> getDeliveriesForDeliveryPerson(Long id) {
+    public List<DeliveryRecord> getDeliveriesForDeliveryPerson(UUID id) {
         return deliveryRecordRepository.findAll().stream()
                 .filter(record -> record.getDeliveryPersonId().equals(id))
                 .toList();

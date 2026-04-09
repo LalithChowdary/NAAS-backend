@@ -1,5 +1,7 @@
 package com.naas.backend.publication;
 
+import java.util.UUID;
+
 import com.naas.backend.publication.dto.PublicationRequest;
 import com.naas.backend.publication.dto.PublicationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +31,14 @@ public class PublicationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PublicationResponse> getPublicationDetails(@PathVariable Long id) {
+    public ResponseEntity<PublicationResponse> getPublicationDetails(@PathVariable UUID id) {
         PublicationResponse response = publicationService.getPublicationById(id);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PublicationResponse> updatePublication(
-            @PathVariable Long id, 
+            @PathVariable UUID id, 
             @RequestBody PublicationRequest request) {
         PublicationResponse response = publicationService.updatePublication(id, request);
         return ResponseEntity.ok(response);
@@ -44,7 +46,7 @@ public class PublicationController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<PublicationResponse> enableDisablePublication(
-            @PathVariable Long id, 
+            @PathVariable UUID id, 
             @RequestBody Map<String, Boolean> statusUpdate) {
         boolean enabled = statusUpdate.getOrDefault("enabled", false);
         PublicationResponse response = publicationService.toggleEnabled(id, enabled);

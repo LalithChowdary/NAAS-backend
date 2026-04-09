@@ -1,5 +1,7 @@
 package com.naas.backend.admin.controller;
 
+import java.util.UUID;
+
 import com.naas.backend.subscription.SubscriptionService;
 import com.naas.backend.subscription.dto.GlobalDeliveryPauseResponse;
 import com.naas.backend.subscription.dto.SubscriptionResponse;
@@ -27,12 +29,12 @@ public class AdminSubscriptionController {
     }
 
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<SubscriptionResponse>> getCustomerSubscriptions(@PathVariable Long customerId) {
+    public ResponseEntity<List<SubscriptionResponse>> getCustomerSubscriptions(@PathVariable UUID customerId) {
         return ResponseEntity.ok(subscriptionService.getCustomerSubscriptions(customerId));
     }
 
     @GetMapping("/customer/{customerId}/pauses")
-    public ResponseEntity<List<GlobalDeliveryPauseResponse>> getCustomerGlobalPauses(@PathVariable Long customerId) {
+    public ResponseEntity<List<GlobalDeliveryPauseResponse>> getCustomerGlobalPauses(@PathVariable UUID customerId) {
         return ResponseEntity.ok(subscriptionService.getCustomerGlobalPauses(customerId));
     }
 }

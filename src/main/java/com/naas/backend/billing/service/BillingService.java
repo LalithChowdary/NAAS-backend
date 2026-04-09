@@ -1,5 +1,7 @@
 package com.naas.backend.billing.service;
 
+import java.util.UUID;
+
 import com.naas.backend.billing.dto.BillItemResponseDTO;
 import com.naas.backend.billing.dto.BillResponseDTO;
 import com.naas.backend.billing.dto.PaymentRequestDTO;
@@ -126,21 +128,21 @@ public class BillingService {
     }
 
     @Transactional(readOnly = true)
-    public List<BillResponseDTO> getCustomerBills(Long customerId) {
+    public List<BillResponseDTO> getCustomerBills(UUID customerId) {
         return billRepository.findByCustomerIdOrderByCreatedAtDesc(customerId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public BillResponseDTO getBillById(Long id) {
+    public BillResponseDTO getBillById(UUID id) {
         Bill bill = billRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bill not found"));
         return mapToDTO(bill);
     }
 
     @Transactional(readOnly = true)
-    public BillResponseDTO getCustomerBillById(Long customerId, Long billId) {
+    public BillResponseDTO getCustomerBillById(UUID customerId, UUID billId) {
         Bill bill = billRepository.findById(billId)
                 .filter(b -> b.getCustomer().getId().equals(customerId))
                 .orElseThrow(() -> new RuntimeException("Bill not found or access denied"));
@@ -161,7 +163,7 @@ public class BillingService {
     // ── Payment recording ────────────────────────────────────────────
 
     @Transactional
-    public PaymentResponseDTO recordPayment(Long billId, PaymentRequestDTO req) {
+    public PaymentResponseDTO recordPayment(UUID billId, PaymentRequestDTO req) {
         Bill bill = billRepository.findById(billId)
                 .orElseThrow(() -> new RuntimeException("Bill not found"));
 
@@ -194,7 +196,7 @@ public class BillingService {
     }
 
     @Transactional
-    public BillResponseDTO markBillStatus(Long billId, String status) {
+    public BillResponseDTO markBillStatus(UUID billId, String status) {
         Bill bill = billRepository.findById(billId)
                 .orElseThrow(() -> new RuntimeException("Bill not found"));
         bill.setStatus(BillStatus.valueOf(status.toUpperCase()));
@@ -203,14 +205,14 @@ public class BillingService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponseDTO> getPaymentsForBill(Long billId) {
+    public List<PaymentResponseDTO> getPaymentsForBill(UUID billId) {
         return paymentRepository.findByBillIdOrderByPaidAtDesc(billId).stream()
                 .map(this::mapPaymentToDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponseDTO> getCustomerPayments(Long customerId) {
+    public List<PaymentResponseDTO> getCustomerPayments(UUID customerId) {
         return paymentRepository.findByCustomerIdOrderByPaidAtDesc(customerId).stream()
                 .map(this::mapPaymentToDTO)
                 .collect(Collectors.toList());

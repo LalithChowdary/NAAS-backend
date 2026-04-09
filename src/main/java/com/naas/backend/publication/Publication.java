@@ -1,5 +1,7 @@
 package com.naas.backend.publication;
 
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,8 +10,8 @@ import java.time.LocalDateTime;
 public class Publication {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private String name;
@@ -39,8 +41,8 @@ public class Publication {
 
     // Getters and Setters
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

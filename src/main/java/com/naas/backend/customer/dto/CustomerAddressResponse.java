@@ -1,13 +1,15 @@
 package com.naas.backend.customer.dto;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class CustomerAddressResponse {
-    private Long id;
-    private Long customerId;
+    private UUID id;
+    private UUID customerId;
     private String label;
     private String address;
     private Double latitude;

@@ -1,5 +1,7 @@
 package com.naas.backend.delivery.dto;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,8 +10,8 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class DeliveryPersonHistoryResponse {
-    private Long id;
-    private Long subscriptionId;
+    private UUID id;
+    private UUID subscriptionId;
     private LocalDate deliveryDate;
     private String status;
     private String publications;

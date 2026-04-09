@@ -1,13 +1,15 @@
 package com.naas.backend.subscription.dto;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class SubscriptionItemResponse {
-    private Long id;
-    private Long publicationId;
+    private UUID id;
+    private UUID publicationId;
     private String publicationName;
     private double price;
     private String type; // Magazine vs Newspaper

@@ -1,5 +1,7 @@
 package com.naas.backend.admin;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class Admin {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)

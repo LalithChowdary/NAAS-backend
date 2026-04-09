@@ -1,5 +1,7 @@
 package com.naas.backend.deliveryperson;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class DeliveryPerson {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)
@@ -27,8 +29,6 @@ public class DeliveryPerson {
     private String phone;
     private String employeeId;
     private String payoutDetails;
-    private String assignedArea; // Area for delivery (matches Customer.area)
-    
-    @Builder.Default
+@Builder.Default
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 }

@@ -1,5 +1,7 @@
 package com.naas.backend.delivery.entity;
 
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,23 +19,23 @@ import java.time.LocalDate;
 public class DeliveryRecord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private LocalDate deliveryDate;
 
     @Column(nullable = false)
-    private Long deliveryPersonId;
+    private UUID deliveryPersonId;
 
     @Column(nullable = false)
-    private Long customerId;
+    private UUID customerId;
 
     @Column(name = "publication_id", nullable = true)
-    private Long publicationId;
+    private UUID publicationId;
 
     @Column(nullable = false)
-    private Long subscriptionId;
+    private UUID subscriptionId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

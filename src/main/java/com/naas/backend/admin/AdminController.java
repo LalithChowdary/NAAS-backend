@@ -1,5 +1,7 @@
 package com.naas.backend.admin;
 
+import java.util.UUID;
+
 import com.naas.backend.admin.dto.CreateAdminRequest;
 import com.naas.backend.admin.dto.CreateDeliveryPersonRequest;
 import com.naas.backend.customer.CustomerService;
@@ -56,7 +58,7 @@ public class AdminController {
     // FR-CM3: View single customer
     @GetMapping("/customers/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable Long id) {
+    public ResponseEntity<CustomerResponse> getCustomer(@PathVariable UUID id) {
         return ResponseEntity.ok(customerService.getCustomerById(id));
     }
 
@@ -72,7 +74,7 @@ public class AdminController {
     @PutMapping("/customers/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CustomerResponse> updateCustomer(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody UpdateCustomerRequest request) {
         return ResponseEntity.ok(customerService.updateCustomer(id, request));
     }
@@ -81,7 +83,7 @@ public class AdminController {
     @PatchMapping("/customers/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CustomerResponse> toggleCustomerStatus(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestParam boolean active) {
         return ResponseEntity.ok(customerService.toggleStatus(id, active));
     }
@@ -89,7 +91,7 @@ public class AdminController {
     // FR-CM6: Soft-delete customer
     @DeleteMapping("/customers/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<String> deleteCustomer(@PathVariable UUID id) {
         customerService.deleteCustomer(id);
         return ResponseEntity.ok("Customer deactivated successfully");
     }

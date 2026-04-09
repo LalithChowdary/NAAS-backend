@@ -1,5 +1,7 @@
 package com.naas.backend.delivery.service;
 
+import java.util.UUID;
+
 import com.naas.backend.delivery.entity.DeliveryRecord;
 import com.naas.backend.delivery.repository.DeliveryRecordRepository;
 import com.naas.backend.deliveryperson.DeliveryPerson;
@@ -100,7 +102,7 @@ public class DeliveryService {
         }).filter(r -> r != null).collect(java.util.stream.Collectors.toList());
     }
 
-    public List<Map<String, Object>> getDailyDeliverySchedule(Long deliveryPersonId, LocalDate date) {
+    public List<Map<String, Object>> getDailyDeliverySchedule(UUID deliveryPersonId, LocalDate date) {
         List<DeliveryRecord> records;
         if (deliveryPersonId != null) {
             records = deliveryRecordRepository.findByDeliveryDateAndDeliveryPersonId(date, deliveryPersonId);
@@ -135,7 +137,7 @@ public class DeliveryService {
         return flatSchedule;
     }
 
-    public void updateDeliveryStatus(LocalDate date, Long deliveryPersonId, Long subscriptionId,
+    public void updateDeliveryStatus(LocalDate date, UUID deliveryPersonId, UUID subscriptionId,
             DeliveryRecord.DeliveryStatus status) {
         List<DeliveryRecord> records = deliveryRecordRepository.findByDeliveryDateAndSubscriptionId(date,
                 subscriptionId);
@@ -146,10 +148,10 @@ public class DeliveryService {
                 .build() : records.get(0);
 
         if (record.getId() == null) {
-            syncDeliveryRecordIdSequence();
+            // syncDeliveryRecordIdSequence();
             Subscription sub = subscriptionRepository.findById(subscriptionId).orElseThrow();
             record.setCustomerId(sub.getCustomer().getId());
-            record.setPublicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? 0L
+            record.setPublicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? null
                     : sub.getItems().get(0).getPublication().getId());
         }
 
@@ -175,7 +177,7 @@ public class DeliveryService {
      * them on-the-fly.
      */
     public void generateSchedulesForDate(LocalDate date) {
-        syncDeliveryRecordIdSequence();
+        // syncDeliveryRecordIdSequence();
 
         List<Subscription> allActive = subscriptionRepository.findAll().stream()
                 .filter(s -> s.getStatus() == SubscriptionStatus.ACTIVE)
@@ -186,11 +188,7 @@ public class DeliveryService {
             return;
         }
 
-        List<DeliveryPerson> globalPersons = allDeliveryPersons.stream()
-                .filter(dp -> dp.getAssignedArea() == null || dp.getAssignedArea().trim().isEmpty()
-                        || dp.getAssignedArea().equalsIgnoreCase("Global")
-                        || dp.getAssignedArea().equalsIgnoreCase("All"))
-                .collect(Collectors.toList());
+        List<DeliveryPerson> globalPersons = allDeliveryPersons;
 
         Map<String, Integer> roundRobinIndex = new HashMap<>();
 
@@ -217,13 +215,7 @@ public class DeliveryService {
             String area = ""; // Deprecated field
             List<DeliveryPerson> eligible = new ArrayList<>();
 
-            if (area != null && !area.trim().isEmpty()) {
-                String areaLower = area.toLowerCase();
-                eligible = allDeliveryPersons.stream()
-                        .filter(dp -> dp.getAssignedArea() != null
-                                && dp.getAssignedArea().toLowerCase().contains(areaLower))
-                        .collect(Collectors.toList());
-            }
+            
 
             if (eligible.isEmpty()) {
                 eligible = globalPersons;
@@ -242,7 +234,7 @@ public class DeliveryService {
                     .deliveryPersonId(assignedPerson.getId())
                     .subscriptionId(sub.getId())
                     .customerId(sub.getCustomer().getId())
-                    .publicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? 0L
+                    .publicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? null
                             : sub.getItems().get(0).getPublication().getId())
                     .status(DeliveryRecord.DeliveryStatus.PENDING)
                     .build();
@@ -250,15 +242,7 @@ public class DeliveryService {
         }
     }
 
-    private void syncDeliveryRecordIdSequence() {
-        jdbcTemplate.queryForObject("""
-                SELECT setval(
-                        pg_get_serial_sequence('delivery_records', 'id'),
-                        COALESCE((SELECT MAX(id) FROM delivery_records), 0) + 1,
-                        false
-                )
-                """, Long.class);
-    }
+    private void syncDeliveryRecordIdSequence() { }
 
     private void saveDeliveryRecordWithRetry(DeliveryRecord record) {
         try {
@@ -268,7 +252,7 @@ public class DeliveryService {
                 throw ex;
             }
 
-            syncDeliveryRecordIdSequence();
+            // syncDeliveryRecordIdSequence();
             deliveryRecordRepository.save(record);
         }
     }

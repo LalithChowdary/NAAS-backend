@@ -1,5 +1,7 @@
 package com.naas.backend.subscription.dto;
 
+import java.util.UUID;
+
 import com.naas.backend.subscription.SubscriptionStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -11,10 +13,10 @@ import java.util.List;
 @Data
 @Builder
 public class SubscriptionResponse {
-    private Long id;
-    private Long customerId;
+    private UUID id;
+    private UUID customerId;
     private String customerName;
-    private Long publicationId; // leaving for backwards compatibility temporarily
+    private UUID publicationId; // leaving for backwards compatibility temporarily
     private String publicationName;
     private List<SubscriptionItemResponse> items; // The new proper schema
     private SubscriptionStatus status;

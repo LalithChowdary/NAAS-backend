@@ -1,5 +1,7 @@
 package com.naas.backend.deliveryperson.controller;
 
+import java.util.UUID;
+
 import com.naas.backend.deliveryperson.DeliveryPerson;
 import com.naas.backend.deliveryperson.service.DeliveryPersonService;
 import lombok.RequiredArgsConstructor;
@@ -56,72 +58,64 @@ public class DeliveryPersonController {
                 body.get("name"),
                 body.get("email"),
                 body.get("password"),
-                body.get("phone"),
-                body.get("assignedArea")
-        ));
+                body.get("phone")));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPerson> create(@RequestParam String name, @RequestParam String email,
             @RequestParam String password, @RequestParam String phone,
-            @RequestParam String employeeId, @RequestParam String assignedArea) {
+            @RequestParam String employeeId) {
         return ResponseEntity
-                .ok(deliveryPersonService.createDeliveryPerson(name, email, password, phone, employeeId, assignedArea));
+                .ok(deliveryPersonService.createDeliveryPerson(name, email, password, phone, employeeId));
     }
 
-    @PutMapping("/{id}/area")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> assignArea(@PathVariable Long id, @RequestParam String area) {
-        return ResponseEntity.ok(deliveryPersonService.assignArea(id, area));
-    }
     
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> approve(@PathVariable Long id) {
+    public ResponseEntity<DeliveryPerson> approve(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.approveDeliveryPerson(id));
     }
     
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> reject(@PathVariable Long id) {
+    public ResponseEntity<DeliveryPerson> reject(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.rejectDeliveryPerson(id));
     }
 
     @PutMapping("/{id}/toggleStatus")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> toggleStatus(@PathVariable Long id, @RequestParam boolean active) {
+    public ResponseEntity<DeliveryPerson> toggleStatus(@PathVariable UUID id, @RequestParam boolean active) {
         return ResponseEntity.ok(deliveryPersonService.toggleStatus(id, active));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> getById(@PathVariable Long id) {
+    public ResponseEntity<DeliveryPerson> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.getDeliveryPersonById(id));
     }
 
     @GetMapping("/{id}/deliveries")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<com.naas.backend.delivery.entity.DeliveryRecord>> getDeliveries(@PathVariable Long id) {
+    public ResponseEntity<List<com.naas.backend.delivery.entity.DeliveryRecord>> getDeliveries(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.getDeliveriesForDeliveryPerson(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable UUID id, @RequestBody java.util.Map<String, String> body) {
         return ResponseEntity.ok(deliveryPersonService.updateDeliveryPersonAsAdmin(
                 id,
                 body.get("name"),
                 body.get("phone"),
                 body.get("employeeId"),
-                body.get("assignedArea"),
                 body.get("payoutDetails")
         ));
     }
 
     @GetMapping("/{id}/payout")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")
-    public ResponseEntity<Double> calculatePayout(@PathVariable Long id, @RequestParam String start,
+    public ResponseEntity<Double> calculatePayout(@PathVariable UUID id, @RequestParam String start,
             @RequestParam String end) {
         return ResponseEntity
                 .ok(deliveryPersonService.calculatePayout(id, LocalDate.parse(start), LocalDate.parse(end)));

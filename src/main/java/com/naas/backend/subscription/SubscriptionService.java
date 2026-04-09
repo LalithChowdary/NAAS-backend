@@ -1,5 +1,7 @@
 package com.naas.backend.subscription;
 
+import java.util.UUID;
+
 import com.naas.backend.customer.Customer;
 import com.naas.backend.customer.CustomerRepository;
 import com.naas.backend.publication.Publication;
@@ -33,7 +35,7 @@ public class SubscriptionService {
                 }
         }
 
-        public List<SubscriptionResponse> createSubscription(Long customerId, CreateSubscriptionRequest request) {
+        public List<SubscriptionResponse> createSubscription(UUID customerId, CreateSubscriptionRequest request) {
                 validateAdvanceNotice(request.getStartDate());
 
                 Customer customer = customerRepository.findById(customerId)
@@ -68,7 +70,7 @@ public class SubscriptionService {
                 java.util.List<SubscriptionItem> requestedItems = new java.util.ArrayList<>();
 
                 for (CreateSubscriptionRequest.ItemRequest itemReq : request.getItems()) {
-                        Long pubId = itemReq.getPublicationId();
+                        UUID pubId = itemReq.getPublicationId();
                         if (pubId == null) {
                                 throw new IllegalArgumentException("Publication ID cannot be null");
                         }
@@ -102,7 +104,7 @@ public class SubscriptionService {
                 return List.of(mapToResponse(savedSubscription));
         }
 
-        public SubscriptionResponse cancelSubscription(Long customerId, Long subscriptionId,
+        public SubscriptionResponse cancelSubscription(UUID customerId, UUID subscriptionId,
                         CancelSubscriptionRequest request) {
                 if (request.getCancelDate() == null) {
                         request.setCancelDate(LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS));
@@ -119,7 +121,7 @@ public class SubscriptionService {
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
 
-        public SubscriptionResponse suspendSubscription(Long customerId, Long subscriptionId,
+        public SubscriptionResponse suspendSubscription(UUID customerId, UUID subscriptionId,
                         SuspendSubscriptionRequest request) {
                 validateAdvanceNotice(request.getSuspendStartDate());
                 if (request.getSuspendEndDate() != null
@@ -136,7 +138,7 @@ public class SubscriptionService {
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
 
-        public GlobalDeliveryPauseResponse addGlobalPause(Long customerId, GlobalDeliveryPauseRequest request) {
+        public GlobalDeliveryPauseResponse addGlobalPause(UUID customerId, GlobalDeliveryPauseRequest request) {
                 validateAdvanceNotice(request.getStartDate());
                 if (request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
                         throw new IllegalArgumentException("Pause end date cannot be before start date");
@@ -161,7 +163,7 @@ public class SubscriptionService {
                                 .build();
         }
 
-        public List<SubscriptionResponse> getCustomerSubscriptions(Long customerId) {
+        public List<SubscriptionResponse> getCustomerSubscriptions(UUID customerId) {
                 return subscriptionRepository.findByCustomerId(customerId).stream()
                                 .map(this::mapToResponse)
                                 .collect(Collectors.toList());
@@ -173,7 +175,7 @@ public class SubscriptionService {
                                 .collect(Collectors.toList());
         }
 
-        public List<GlobalDeliveryPauseResponse> getCustomerGlobalPauses(Long customerId) {
+        public List<GlobalDeliveryPauseResponse> getCustomerGlobalPauses(UUID customerId) {
                 return globalDeliveryPauseRepository.findByCustomerId(customerId).stream()
                                 .map(pause -> GlobalDeliveryPauseResponse.builder()
                                                 .id(pause.getId())
@@ -185,7 +187,7 @@ public class SubscriptionService {
         }
 
         private SubscriptionResponse mapToResponse(Subscription subscription) {
-                Long firstPubId = subscription.getItems() == null || subscription.getItems().isEmpty() ? null
+                UUID firstPubId = subscription.getItems() == null || subscription.getItems().isEmpty() ? null
                                 : subscription.getItems().get(0).getPublication().getId();
                 String pubNames = subscription.getItems() == null || subscription.getItems().isEmpty() ? ""
                                 : subscription.getItems().stream()

@@ -1,5 +1,7 @@
 package com.naas.backend.subscription;
 
+import java.util.UUID;
+
 import com.naas.backend.customer.Customer;
 import com.naas.backend.publication.Publication;
 import jakarta.persistence.*;
@@ -20,8 +22,8 @@ import java.time.LocalDateTime;
 public class Subscription {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)

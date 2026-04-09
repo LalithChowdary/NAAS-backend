@@ -1,5 +1,7 @@
 package com.naas.backend.delivery.controller;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.delivery.dto.CustomerDeliveryResponse;
 import com.naas.backend.delivery.dto.DeliveryPersonHistoryResponse;
@@ -31,7 +33,7 @@ public class DeliveryController {
     @GetMapping("/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")
     public ResponseEntity<List<Map<String, Object>>> getDailySchedule(
-            @RequestParam(required = false) Long deliveryPersonId,
+            @RequestParam(required = false) UUID deliveryPersonId,
             @RequestParam(required = false) String date) {
 
         LocalDate queryDate = date != null ? LocalDate.parse(date) : LocalDate.now();
@@ -48,8 +50,8 @@ public class DeliveryController {
     @PostMapping("/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'DELIVERY_PERSON')")
     public ResponseEntity<Void> updateDeliveryStatus(
-            @RequestParam Long deliveryPersonId,
-            @RequestParam Long subscriptionId,
+            @RequestParam UUID deliveryPersonId,
+            @RequestParam UUID subscriptionId,
             @RequestParam String date,
             @RequestParam DeliveryRecord.DeliveryStatus status) {
 

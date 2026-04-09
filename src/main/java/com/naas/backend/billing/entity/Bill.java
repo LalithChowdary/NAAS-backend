@@ -1,5 +1,7 @@
 package com.naas.backend.billing.entity;
 
+import java.util.UUID;
+
 import com.naas.backend.customer.Customer;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,8 +24,8 @@ import java.util.List;
 public class Bill {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)

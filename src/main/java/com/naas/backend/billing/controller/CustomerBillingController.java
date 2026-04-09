@@ -1,5 +1,7 @@
 package com.naas.backend.billing.controller;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.billing.dto.BillResponseDTO;
 import com.naas.backend.billing.dto.PaymentResponseDTO;
@@ -23,7 +25,7 @@ public class CustomerBillingController {
     private final BillingService billingService;
     private final CustomerRepository customerRepository;
 
-    private Long getCustomerId(User user) {
+    private UUID getCustomerId(User user) {
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer profile not found"));
         return customer.getId();
@@ -37,7 +39,7 @@ public class CustomerBillingController {
     @GetMapping("/bills/{id}")
     public ResponseEntity<BillResponseDTO> getMyBillDetail(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return ResponseEntity.ok(billingService.getCustomerBillById(getCustomerId(user), id));
     }
 

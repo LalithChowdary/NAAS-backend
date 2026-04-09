@@ -1,5 +1,7 @@
 package com.naas.backend.billing.entity;
 
+import java.util.UUID;
+
 import com.naas.backend.publication.Publication;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,8 +20,8 @@ import java.math.BigDecimal;
 public class BillItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id", nullable = false)

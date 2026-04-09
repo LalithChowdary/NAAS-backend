@@ -1,5 +1,7 @@
 package com.naas.backend.publication;
 
+import java.util.UUID;
+
 import com.naas.backend.publication.dto.PublicationRequest;
 import com.naas.backend.publication.dto.PublicationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,7 @@ public class PublicationService {
         }
     }
 
-    public PublicationResponse getPublicationById(Long id) {
+    public PublicationResponse getPublicationById(UUID id) {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Publication not found with id: " + id));
         return toResponse(publication);
@@ -60,7 +62,7 @@ public class PublicationService {
         return toResponse(savedPublication);
     }
 
-    public PublicationResponse updatePublication(Long id, PublicationRequest request) {
+    public PublicationResponse updatePublication(UUID id, PublicationRequest request) {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Publication not found with id: " + id));
 
@@ -84,7 +86,7 @@ public class PublicationService {
         return toResponse(updatedPublication);
     }
 
-    public PublicationResponse toggleEnabled(Long id, boolean enabled) {
+    public PublicationResponse toggleEnabled(UUID id, boolean enabled) {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Publication not found with id: " + id));
         

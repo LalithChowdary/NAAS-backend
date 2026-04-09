@@ -1,5 +1,7 @@
 package com.naas.backend.customer;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.auth.repository.UserRepository;
 import com.naas.backend.customer.dto.CreateCustomerByAdminRequest;
@@ -89,7 +91,7 @@ public class CustomerService {
                 .collect(Collectors.toList());
     }
 
-    public CustomerResponse getCustomerById(Long id) {
+    public CustomerResponse getCustomerById(UUID id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
         return toResponse(customer);
@@ -121,7 +123,7 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse updateCustomer(Long id, UpdateCustomerRequest request) {
+    public CustomerResponse updateCustomer(UUID id, UpdateCustomerRequest request) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
 
@@ -135,7 +137,7 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse toggleStatus(Long id, boolean active) {
+    public CustomerResponse toggleStatus(UUID id, boolean active) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
 
@@ -150,7 +152,7 @@ public class CustomerService {
     }
 
     @Transactional
-    public void deleteCustomer(Long id) {
+    public void deleteCustomer(UUID id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
 

@@ -1,5 +1,7 @@
 package com.naas.backend.customer.dto;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CustomerResponse {
 
-    private Long id;
+    private UUID id;
     private String name;
     private String email;
     private String phone;

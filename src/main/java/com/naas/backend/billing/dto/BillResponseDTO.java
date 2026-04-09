@@ -1,5 +1,7 @@
 package com.naas.backend.billing.dto;
 
+import java.util.UUID;
+
 import com.naas.backend.billing.entity.BillStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +14,8 @@ import java.util.List;
 @Data
 @Builder
 public class BillResponseDTO {
-    private Long id;
-    private Long customerId;
+    private UUID id;
+    private UUID customerId;
     private String customerName;
     private String customerAddress;
     private String billingMonth;

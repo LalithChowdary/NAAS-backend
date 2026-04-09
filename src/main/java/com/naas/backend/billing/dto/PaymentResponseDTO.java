@@ -1,5 +1,7 @@
 package com.naas.backend.billing.dto;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,10 +11,10 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class PaymentResponseDTO {
-    private Long id;
-    private Long billId;
+    private UUID id;
+    private UUID billId;
     private String billingMonth;
-    private Long customerId;
+    private UUID customerId;
     private String customerName;
     private BigDecimal amount;
     private String paymentMethod;

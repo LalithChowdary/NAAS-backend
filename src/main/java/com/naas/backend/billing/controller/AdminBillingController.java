@@ -1,5 +1,7 @@
 package com.naas.backend.billing.controller;
 
+import java.util.UUID;
+
 import com.naas.backend.billing.dto.BillResponseDTO;
 import com.naas.backend.billing.dto.PaymentRequestDTO;
 import com.naas.backend.billing.dto.PaymentResponseDTO;
@@ -29,7 +31,7 @@ public class AdminBillingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BillResponseDTO> getBillById(@PathVariable Long id) {
+    public ResponseEntity<BillResponseDTO> getBillById(@PathVariable UUID id) {
         return ResponseEntity.ok(billingService.getBillById(id));
     }
 
@@ -60,7 +62,7 @@ public class AdminBillingController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<BillResponseDTO> markBillStatus(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
         String status = body.getOrDefault("status", "PAID");
         return ResponseEntity.ok(billingService.markBillStatus(id, status));
@@ -70,13 +72,13 @@ public class AdminBillingController {
 
     @PostMapping("/{id}/payments")
     public ResponseEntity<PaymentResponseDTO> recordPayment(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody PaymentRequestDTO request) {
         return ResponseEntity.ok(billingService.recordPayment(id, request));
     }
 
     @GetMapping("/{id}/payments")
-    public ResponseEntity<List<PaymentResponseDTO>> getPaymentsForBill(@PathVariable Long id) {
+    public ResponseEntity<List<PaymentResponseDTO>> getPaymentsForBill(@PathVariable UUID id) {
         return ResponseEntity.ok(billingService.getPaymentsForBill(id));
     }
 }

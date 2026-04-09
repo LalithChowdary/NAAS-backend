@@ -1,5 +1,7 @@
 package com.naas.backend.customer;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,8 +20,8 @@ import java.time.LocalDateTime;
 public class Customer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)

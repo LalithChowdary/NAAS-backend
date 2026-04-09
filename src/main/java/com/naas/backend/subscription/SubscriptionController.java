@@ -1,5 +1,7 @@
 package com.naas.backend.subscription;
 
+import java.util.UUID;
+
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.customer.Customer;
 import com.naas.backend.customer.CustomerRepository;
@@ -31,7 +33,7 @@ public class SubscriptionController {
         return ResponseEntity.badRequest().body("{\"message\": \"" + e.getMessage() + "\"}");
     }
 
-    private Long getCustomerId(User user) {
+    private UUID getCustomerId(User user) {
         Customer customer = customerRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Customer profile not found"));
         return customer.getId();
@@ -52,7 +54,7 @@ public class SubscriptionController {
     @PutMapping("/{id}/cancel")
     public ResponseEntity<SubscriptionResponse> cancelSubscription(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody CancelSubscriptionRequest request) {
         return ResponseEntity.ok(subscriptionService.cancelSubscription(getCustomerId(user), id, request));
     }
@@ -60,7 +62,7 @@ public class SubscriptionController {
     @PutMapping("/{id}/suspend")
     public ResponseEntity<SubscriptionResponse> suspendSubscription(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody SuspendSubscriptionRequest request) {
         return ResponseEntity.ok(subscriptionService.suspendSubscription(getCustomerId(user), id, request));
     }
