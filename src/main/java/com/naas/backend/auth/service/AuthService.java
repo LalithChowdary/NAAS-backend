@@ -31,6 +31,13 @@ public class AuthService {
         private final AuthenticationManager authenticationManager;
 
         public AuthResponse login(LoginRequest request) {
+                User checkUser = userRepository.findByEmail(request.getEmail()).orElse(null);
+                if (checkUser != null && request.getExpectedRole() != null) {
+                        if (!checkUser.getRole().name().equalsIgnoreCase(request.getExpectedRole())) {
+                                throw new RuntimeException("Invalid email or password");
+                        }
+                }
+
                 try {
                         authenticationManager.authenticate(
                                         new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -53,7 +60,7 @@ public class AuthService {
                         throw new RuntimeException("Authentication failed");
                 }
 
-                User user = userRepository.findByEmail(request.getEmail())
+                User user = checkUser != null ? checkUser : userRepository.findByEmail(request.getEmail())
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
                 String token = jwtService.generateToken(user);
