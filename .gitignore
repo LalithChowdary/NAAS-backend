@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore GCP credentials
+src/main/resources/swe-naas-7bbde297e808.json

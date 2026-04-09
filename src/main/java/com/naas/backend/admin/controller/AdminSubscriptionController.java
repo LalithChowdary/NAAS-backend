@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.naas.backend.subscription.dto.ItemStatusRequest;
 
 import java.util.List;
 
@@ -36,5 +39,14 @@ public class AdminSubscriptionController {
     @GetMapping("/customer/{customerId}/pauses")
     public ResponseEntity<List<GlobalDeliveryPauseResponse>> getCustomerGlobalPauses(@PathVariable UUID customerId) {
         return ResponseEntity.ok(subscriptionService.getCustomerGlobalPauses(customerId));
+    }
+
+    @PatchMapping("/customer/{customerId}/{subscriptionId}/items/{itemId}")
+    public ResponseEntity<SubscriptionResponse> updateItemStatus(
+            @PathVariable UUID customerId,
+            @PathVariable UUID subscriptionId,
+            @PathVariable UUID itemId,
+            @RequestBody ItemStatusRequest request) {
+        return ResponseEntity.ok(subscriptionService.updateItemStatus(customerId, subscriptionId, itemId, request));
     }
 }

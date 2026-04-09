@@ -6,10 +6,15 @@ import com.naas.backend.delivery.entity.DeliveryRecord;
 import com.naas.backend.delivery.repository.DeliveryRecordRepository;
 import com.naas.backend.deliveryperson.DeliveryPerson;
 import com.naas.backend.deliveryperson.DeliveryPersonRepository;
+import com.naas.backend.hub.Hub;
+import com.naas.backend.hub.HubRepository;
 import com.naas.backend.subscription.Subscription;
 import com.naas.backend.subscription.SubscriptionRepository;
 import com.naas.backend.subscription.SubscriptionStatus;
+import com.naas.backend.subscription.SubscriptionStatus;
+import com.naas.backend.subscription.SubscriptionItemStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,6 +31,7 @@ import com.naas.backend.auth.entity.User;
 import com.naas.backend.customer.Customer;
 import com.naas.backend.customer.CustomerRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeliveryService {
@@ -34,7 +40,9 @@ public class DeliveryService {
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final DeliveryPersonRepository deliveryPersonRepository;
     private final CustomerRepository customerRepository;
+    private final HubRepository hubRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final FleetRoutingService fleetRoutingService;
 
     public List<CustomerDeliveryResponse> getCustomerDeliveries(User user) {
         Customer customer = customerRepository.findByUser(user)
@@ -50,13 +58,17 @@ public class DeliveryService {
                 continue;
 
             String pubNames = (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
-                    : sub.getItems().stream().map(item -> item.getPublication().getName())
+                    : sub.getItems().stream()
+                            .filter(this::isItemActive)
+                            .map(item -> item.getPublication().getName())
                             .collect(Collectors.joining(", "));
 
             double dailyCost = 0.0;
             if (sub.getItems() != null) {
                 for (SubscriptionItem item : sub.getItems()) {
-                    dailyCost += item.getPublication().getPrice();
+                    if (isItemActive(item)) {
+                        dailyCost += item.getPublication().getPrice();
+                    }
                 }
             }
 
@@ -84,8 +96,8 @@ public class DeliveryService {
             if (sub == null)
                 return null;
 
-            double total = sub.getItems().stream().mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
-            String pubs = sub.getItems().stream().map(i -> i.getPublication().getName())
+            double total = sub.getItems().stream().filter(this::isItemActive).mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
+            String pubs = sub.getItems().stream().filter(this::isItemActive).map(i -> i.getPublication().getName())
                     .collect(java.util.stream.Collectors.joining(", "));
 
             return DeliveryPersonHistoryResponse.builder()
@@ -120,16 +132,26 @@ public class DeliveryService {
             DeliveryPerson person = deliveryPersonRepository.findById(record.getDeliveryPersonId()).orElse(null);
 
             Map<String, Object> map = new HashMap<>();
+            
+            Hub hub = record.getHubId() != null ? hubRepository.findById(record.getHubId()).orElse(null) : null;
+            
             map.put("subscriptionId", sub.getId());
             map.put("customerId", sub.getCustomer().getId());
             map.put("customerName", sub.getCustomer().getName());
             map.put("address", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address");
+            map.put("latitude",  sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLatitude()  : null);
+            map.put("longitude", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLongitude() : null);
             map.put("publicationName",
                     (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
-                            : sub.getItems().stream().map(item -> item.getPublication().getName())
+                            : sub.getItems().stream().filter(this::isItemActive).map(item -> item.getPublication().getName())
                                     .collect(Collectors.joining(", ")));
             map.put("deliveryStatus", record.getStatus().name());
             map.put("assignedTo", person != null ? person.getName() : "Unknown");
+            map.put("deliveryPersonId", person != null ? person.getId() : null);
+            map.put("routeSequence", record.getRouteSequence());
+            map.put("hubName", hub != null ? hub.getName() : null);
+            map.put("hubLat", hub != null ? hub.getLatitude() : null);
+            map.put("hubLng", hub != null ? hub.getLongitude() : null);
 
             flatSchedule.add(map);
         }
@@ -148,7 +170,6 @@ public class DeliveryService {
                 .build() : records.get(0);
 
         if (record.getId() == null) {
-            // syncDeliveryRecordIdSequence();
             Subscription sub = subscriptionRepository.findById(subscriptionId).orElseThrow();
             record.setCustomerId(sub.getCustomer().getId());
             record.setPublicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? null
@@ -160,89 +181,130 @@ public class DeliveryService {
     }
 
     /**
-     * Nightly trigger to pre-generate delivery schedules into the database.
-     * Currently commented out as requested.
-     */
-    // @Scheduled(cron = "0 1 0 * * ?") // Runs at 12:01 AM every day
-    // public void scheduledDailyScheduleGeneration() {
-    // System.out.println("Auto-generating daily delivery schedules for " +
-    // LocalDate.now());
-    // generateSchedulesForDate(LocalDate.now());
-    // }
-
-    /**
-     * Generates and saves PENDING delivery records for a specific date for all
-     * active subscriptions.
-     * This makes the schedules physically exist in the database instead of creating
-     * them on-the-fly.
+     * Generates and saves PENDING delivery records for a specific date.
+     * Uses Google Fleet Routing API to optimally assign deliveries to drivers.
+     * Falls back to round-robin for any subscriptions missing coordinates.
      */
     public void generateSchedulesForDate(LocalDate date) {
-        // syncDeliveryRecordIdSequence();
-
         List<Subscription> allActive = subscriptionRepository.findAll().stream()
                 .filter(s -> s.getStatus() == SubscriptionStatus.ACTIVE)
                 .collect(Collectors.toList());
 
-        List<DeliveryPerson> allDeliveryPersons = deliveryPersonRepository.findAll();
+        List<DeliveryPerson> allDeliveryPersons = deliveryPersonRepository.findAll().stream()
+                .filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus()))
+                .collect(Collectors.toList());
+
         if (allDeliveryPersons.isEmpty()) {
+            log.info("No approved delivery persons found – skipping schedule generation.");
             return;
         }
 
-        List<DeliveryPerson> globalPersons = allDeliveryPersons;
+        // Filter to only subscriptions that need a record today
+        List<Subscription> toSchedule = allActive.stream()
+                .filter(sub -> {
+                    if (sub.getStartDate() != null && sub.getStartDate().isAfter(date)) return false;
+                    if (sub.getEndDate() != null && sub.getEndDate().isBefore(date)) return false;
+                    if (sub.getSuspendStartDate() != null && sub.getSuspendEndDate() != null) {
+                        if ((date.isEqual(sub.getSuspendStartDate()) || date.isAfter(sub.getSuspendStartDate())) &&
+                                (date.isEqual(sub.getSuspendEndDate()) || date.isBefore(sub.getSuspendEndDate()))) {
+                            return false;
+                        }
+                    }
+                    if (sub.getItems() == null || sub.getItems().stream().noneMatch(this::isItemActive)) {
+                        return false;
+                    }
+                    return !deliveryRecordRepository.existsByDeliveryDateAndSubscriptionId(date, sub.getId());
+                })
+                .collect(Collectors.toList());
 
-        Map<String, Integer> roundRobinIndex = new HashMap<>();
-
-        for (Subscription sub : allActive) {
-            if (sub.getStartDate() != null && sub.getStartDate().isAfter(date)) {
-                continue;
-            }
-            if (sub.getEndDate() != null && sub.getEndDate().isBefore(date)) {
-                continue;
-            }
-            if (sub.getSuspendStartDate() != null && sub.getSuspendEndDate() != null) {
-                if ((date.isEqual(sub.getSuspendStartDate()) || date.isAfter(sub.getSuspendStartDate())) &&
-                        (date.isEqual(sub.getSuspendEndDate()) || date.isBefore(sub.getSuspendEndDate()))) {
-                    continue;
-                }
-            }
-
-            boolean existingRecord = deliveryRecordRepository.existsByDeliveryDateAndSubscriptionId(date,
-                    sub.getId());
-            if (existingRecord) {
-                continue;
-            }
-
-            String area = ""; // Deprecated field
-            List<DeliveryPerson> eligible = new ArrayList<>();
-
-            
-
-            if (eligible.isEmpty()) {
-                eligible = globalPersons;
-            }
-            if (eligible.isEmpty()) {
-                eligible = allDeliveryPersons;
-            }
-
-            String rrKey = (area != null && !area.trim().isEmpty()) ? area.toLowerCase() : "global";
-            int idx = roundRobinIndex.getOrDefault(rrKey, 0);
-            DeliveryPerson assignedPerson = eligible.get(idx % eligible.size());
-            roundRobinIndex.put(rrKey, idx + 1);
-
-            DeliveryRecord record = DeliveryRecord.builder()
-                    .deliveryDate(date)
-                    .deliveryPersonId(assignedPerson.getId())
-                    .subscriptionId(sub.getId())
-                    .customerId(sub.getCustomer().getId())
-                    .publicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? null
-                            : sub.getItems().get(0).getPublication().getId())
-                    .status(DeliveryRecord.DeliveryStatus.PENDING)
-                    .build();
-            saveDeliveryRecordWithRetry(record);
+        if (toSchedule.isEmpty()) {
+            log.info("All deliveries already scheduled for " + date);
+            return;
         }
+
+        // Split: subscriptions WITH coordinates go to Fleet Routing, rest to round-robin
+        List<Map<String, Object>> stops = new ArrayList<>();
+        List<Subscription> noCoordSubs = new ArrayList<>();
+
+        for (Subscription sub : toSchedule) {
+            Double lat = sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLatitude() : null;
+            Double lng = sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLongitude() : null;
+
+            if (lat != null && lng != null) {
+                Map<String, Object> stop = new HashMap<>();
+                stop.put("subscriptionId", sub.getId().toString());
+                stop.put("lat", lat);
+                stop.put("lng", lng);
+                stops.add(stop);
+            } else {
+                noCoordSubs.add(sub);
+            }
+        }
+
+        // ── Fleet Routing assignment ──────────────────────────────────────────
+        List<FleetRoutingService.RouteAssignment> assignments = Collections.emptyList();
+        if (!stops.isEmpty()) {
+            try {
+                List<Hub> activeHubs = hubRepository.findAll().stream()
+                        .filter(Hub::isActive)
+                        .collect(Collectors.toList());
+                        
+                assignments = fleetRoutingService.optimizeRoutes(stops, allDeliveryPersons.size(), activeHubs);
+                log.info("Fleet Routing successfully assigned {} stops across {} hubs.", assignments.size(), activeHubs.size());
+            } catch (Exception e) {
+                log.error("Fleet Routing API failed – falling back to round-robin. Error: " + e.getMessage(), e);
+            }
+        }
+
+        // Keep track of which subIds got dynamically assigned
+        Set<String> assignedSubIds = new HashSet<>();
+
+        // Save records for Fleet-Routed stops
+        int fallbackIdx = 0;
+        for (FleetRoutingService.RouteAssignment assignment : assignments) {
+            String subIdStr = assignment.getSubscriptionId();
+            assignedSubIds.add(subIdStr);
+            UUID subId = UUID.fromString(subIdStr);
+            Subscription sub = toSchedule.stream()
+                    .filter(s -> s.getId().equals(subId)).findFirst().orElse(null);
+            if (sub == null) continue;
+
+            int vehicleIdx = assignment.getVehicleIndex();
+            DeliveryPerson assigned = (vehicleIdx < allDeliveryPersons.size())
+                    ? allDeliveryPersons.get(vehicleIdx)
+                    : allDeliveryPersons.get(fallbackIdx++ % allDeliveryPersons.size());
+
+            saveRecord(sub, assigned, date, assignment.getAssignedHubId(), assignment.getRouteSequence());
+        }
+
+        // Save records for stops without coordinates or skipped by FleetRouting (round-robin fallback)
+        for (int i = 0; i < toSchedule.size(); i++) {
+            Subscription sub = toSchedule.get(i);
+            if (!assignedSubIds.contains(sub.getId().toString())) {
+                saveRecord(sub, allDeliveryPersons.get(i % allDeliveryPersons.size()), date, null, null);
+            }
+        }
+
+        log.info("Schedule generation complete for " + date
+                + " – total records: " + (stops.size() + noCoordSubs.size()));
     }
 
-    private void syncDeliveryRecordIdSequence() { }
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void saveRecord(Subscription sub, DeliveryPerson person, LocalDate date, UUID hubId, Integer routeSequence) {
+        DeliveryRecord record = DeliveryRecord.builder()
+                .deliveryDate(date)
+                .deliveryPersonId(person.getId())
+                .subscriptionId(sub.getId())
+                .customerId(sub.getCustomer().getId())
+                .publicationId((sub.getItems() == null || sub.getItems().isEmpty()) ? null
+                        : sub.getItems().get(0).getPublication().getId())
+                .status(DeliveryRecord.DeliveryStatus.PENDING)
+                .hubId(hubId)
+                .routeSequence(routeSequence)
+                .build();
+        saveDeliveryRecordWithRetry(record);
+    }
 
     private void saveDeliveryRecordWithRetry(DeliveryRecord record) {
         try {
@@ -251,8 +313,6 @@ public class DeliveryService {
             if (!isDeliveryRecordPrimaryKeyConflict(ex)) {
                 throw ex;
             }
-
-            // syncDeliveryRecordIdSequence();
             deliveryRecordRepository.save(record);
         }
     }
@@ -262,5 +322,21 @@ public class DeliveryService {
                 ? ex.getMostSpecificCause().getMessage()
                 : ex.getMessage();
         return message != null && message.contains("delivery_records_pkey");
+    }
+
+    private boolean isItemActive(SubscriptionItem item) {
+        if (item.getStatus() == SubscriptionItemStatus.REMOVED) {
+            return false;
+        }
+        if (item.getStatus() == SubscriptionItemStatus.SUSPENDED) {
+            LocalDate today = LocalDate.now();
+            if (item.getStopStartDate() != null && item.getStopEndDate() != null) {
+                if ((today.isEqual(item.getStopStartDate()) || today.isAfter(item.getStopStartDate())) &&
+                    (today.isEqual(item.getStopEndDate()) || today.isBefore(item.getStopEndDate()))) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
