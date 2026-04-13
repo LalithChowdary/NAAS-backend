@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.naas.backend.deliveryperson.dto.PayoutRequest;
+import com.naas.backend.deliveryperson.dto.PayoutResponse;
+
 @RestController
 @RequestMapping("/api/delivery-person")
 @RequiredArgsConstructor
@@ -119,5 +122,18 @@ public class DeliveryPersonController {
             @RequestParam String end) {
         return ResponseEntity
                 .ok(deliveryPersonService.calculatePayout(id, LocalDate.parse(start), LocalDate.parse(end)));
+    }
+
+    @PostMapping("/{id}/payout")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PayoutResponse> processPayout(@PathVariable UUID id, @RequestBody PayoutRequest request) {
+        return ResponseEntity.ok(deliveryPersonService.processPayout(id, request));
+    }
+
+    @GetMapping("/me/payouts")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<List<PayoutResponse>> getMyPayouts() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok(deliveryPersonService.getMyPayouts(auth.getName()));
     }
 }

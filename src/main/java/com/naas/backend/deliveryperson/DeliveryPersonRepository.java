@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface DeliveryPersonRepository extends JpaRepository<DeliveryPerson, UUID> {
 
     Optional<DeliveryPerson> findByUser(User user);
+    Optional<DeliveryPerson> findByUser_Email(String email);
     java.util.List<DeliveryPerson> findByStatus(String status);
     java.util.List<DeliveryPerson> findByStatusNot(String status);
 }

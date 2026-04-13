@@ -8,6 +8,10 @@ import com.naas.backend.delivery.entity.DeliveryRecord;
 import com.naas.backend.delivery.repository.DeliveryRecordRepository;
 import com.naas.backend.deliveryperson.DeliveryPerson;
 import com.naas.backend.deliveryperson.DeliveryPersonRepository;
+import com.naas.backend.deliveryperson.DeliveryPersonPayout;
+import com.naas.backend.deliveryperson.DeliveryPersonPayoutRepository;
+import com.naas.backend.deliveryperson.dto.PayoutRequest;
+import com.naas.backend.deliveryperson.dto.PayoutResponse;
 import com.naas.backend.publication.PublicationRepository;
 import com.naas.backend.publication.Publication;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,6 +32,7 @@ public class DeliveryPersonService {
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final PublicationRepository publicationRepository;
     private final com.naas.backend.subscription.SubscriptionRepository subscriptionRepository;
+    private final DeliveryPersonPayoutRepository deliveryPersonPayoutRepository;
 
     public DeliveryPerson createDeliveryPerson(String name, String email, String password, String phone,
             String employeeId) {
@@ -153,6 +159,52 @@ public class DeliveryPersonService {
     public List<DeliveryRecord> getDeliveriesForDeliveryPerson(UUID id) {
         return deliveryRecordRepository.findAll().stream()
                 .filter(record -> record.getDeliveryPersonId().equals(id))
+                .toList();
+    }
+
+    public PayoutResponse processPayout(UUID deliveryPersonId, PayoutRequest request) {
+        DeliveryPerson deliveryPerson = deliveryPersonRepository.findById(deliveryPersonId)
+                .orElseThrow(() -> new RuntimeException("DeliveryPerson not found"));
+
+        DeliveryPersonPayout payout = DeliveryPersonPayout.builder()
+                .deliveryPerson(deliveryPerson)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .amountPaid(request.getAmountPaid())
+                .paymentDate(LocalDateTime.now())
+                .status(DeliveryPersonPayout.PayoutStatus.COMPLETED)
+                .build();
+
+        payout = deliveryPersonPayoutRepository.save(payout);
+
+        PayoutResponse response = new PayoutResponse();
+        response.setId(payout.getId());
+        response.setDeliveryPersonId(deliveryPerson.getId());
+        response.setStartDate(payout.getStartDate());
+        response.setEndDate(payout.getEndDate());
+        response.setAmountPaid(payout.getAmountPaid());
+        response.setPaymentDate(payout.getPaymentDate());
+        response.setStatus(payout.getStatus());
+        return response;
+    }
+
+    public List<PayoutResponse> getMyPayouts(String email) {
+        DeliveryPerson person = deliveryPersonRepository.findByUser_Email(email)
+                .orElseThrow(() -> new RuntimeException("DeliveryPerson not found"));
+        
+        return deliveryPersonPayoutRepository.findByDeliveryPersonId(person.getId()).stream()
+                .map(payout -> {
+                    PayoutResponse res = new PayoutResponse();
+                    res.setId(payout.getId());
+                    res.setDeliveryPersonId(payout.getDeliveryPerson().getId());
+                    res.setStartDate(payout.getStartDate());
+                    res.setEndDate(payout.getEndDate());
+                    res.setAmountPaid(payout.getAmountPaid());
+                    res.setPaymentDate(payout.getPaymentDate());
+                    res.setStatus(payout.getStatus());
+                    return res;
+                })
+                .sorted((a, b) -> b.getPaymentDate().compareTo(a.getPaymentDate()))
                 .toList();
     }
 }
