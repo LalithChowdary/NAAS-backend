@@ -31,4 +31,20 @@ public class CustomerAddressController {
             @Valid @RequestBody CreateCustomerAddressRequest request) {
         return ResponseEntity.ok(customerAddressService.addCustomerAddress(user, request));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerAddressResponse> updateCustomerAddress(
+            @AuthenticationPrincipal User user,
+            @PathVariable java.util.UUID id,
+            @Valid @RequestBody CreateCustomerAddressRequest request) {
+        return ResponseEntity.ok(customerAddressService.updateCustomerAddress(user, id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomerAddress(
+            @AuthenticationPrincipal User user,
+            @PathVariable java.util.UUID id) {
+        customerAddressService.deleteCustomerAddress(user, id);
+        return ResponseEntity.noContent().build();
+    }
 }

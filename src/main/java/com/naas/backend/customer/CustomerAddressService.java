@@ -14,50 +14,91 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CustomerAddressService {
 
-    private final CustomerAddressRepository customerAddressRepository;
-    private final CustomerRepository customerRepository;
+        private final CustomerAddressRepository customerAddressRepository;
+        private final CustomerRepository customerRepository;
 
-    private CustomerAddressResponse toResponse(CustomerAddress address) {
-        return CustomerAddressResponse.builder()
-                .id(address.getId())
-                .customerId(address.getCustomer().getId())
-                .label(address.getLabel())
-                .address(address.getAddress())
-                .latitude(address.getLatitude())
-                .longitude(address.getLongitude())
-                .house(address.getHouse())
-                .area(address.getArea())
-                .landmark(address.getLandmark())
-                .build();
-    }
+        private CustomerAddressResponse toResponse(CustomerAddress address) {
+                return CustomerAddressResponse.builder()
+                                .id(address.getId())
+                                .customerId(address.getCustomer().getId())
+                                .label(address.getLabel())
+                                .address(address.getAddress())
+                                .latitude(address.getLatitude())
+                                .longitude(address.getLongitude())
+                                .house(address.getHouse())
+                                .area(address.getArea())
+                                .landmark(address.getLandmark())
+                                .build();
+        }
 
-    public List<CustomerAddressResponse> getCustomerAddresses(User user) {
-        Customer customer = customerRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
-        return customerAddressRepository.findByCustomerIdAndActiveTrueOrderByIdDesc(customer.getId())
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
+        public List<CustomerAddressResponse> getCustomerAddresses(User user) {
+                Customer customer = customerRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+                return customerAddressRepository.findByCustomerIdAndActiveTrueOrderByIdDesc(customer.getId())
+                                .stream()
+                                .map(this::toResponse)
+                                .collect(Collectors.toList());
+        }
 
-    @Transactional
-    public CustomerAddressResponse addCustomerAddress(User user, CreateCustomerAddressRequest request) {
-        Customer customer = customerRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+        @Transactional
+        public CustomerAddressResponse addCustomerAddress(User user, CreateCustomerAddressRequest request) {
+                Customer customer = customerRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
-        CustomerAddress address = CustomerAddress.builder()
-                .customer(customer)
-                .label(request.getLabel())
-                .address(request.getAddress())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
-                .house(request.getHouse())
-                .area(request.getArea())
-                .landmark(request.getLandmark())
-                .active(true)
-                .build();
+                CustomerAddress address = CustomerAddress.builder()
+                                .customer(customer)
+                                .label(request.getLabel())
+                                .address(request.getAddress())
+                                .latitude(request.getLatitude())
+                                .longitude(request.getLongitude())
+                                .house(request.getHouse())
+                                .area(request.getArea())
+                                .landmark(request.getLandmark())
+                                .active(true)
+                                .build();
 
-        customerAddressRepository.save(address);
-        return toResponse(address);
-    }
+                customerAddressRepository.save(address);
+                return toResponse(address);
+        }
+
+        @Transactional
+        public CustomerAddressResponse updateCustomerAddress(User user, java.util.UUID addressId,
+                        CreateCustomerAddressRequest request) {
+                Customer customer = customerRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+
+                CustomerAddress address = customerAddressRepository.findById(addressId)
+                                .orElseThrow(() -> new RuntimeException("Address not found"));
+
+                if (!address.getCustomer().getId().equals(customer.getId())) {
+                        throw new RuntimeException("Not authorized to modify this address");
+                }
+
+                address.setLabel(request.getLabel());
+                address.setAddress(request.getAddress());
+                address.setLatitude(request.getLatitude());
+                address.setLongitude(request.getLongitude());
+                address.setHouse(request.getHouse());
+                address.setArea(request.getArea());
+                address.setLandmark(request.getLandmark());
+
+                customerAddressRepository.save(address);
+                return toResponse(address);
+        }
+
+        @Transactional
+        public void deleteCustomerAddress(User user, java.util.UUID addressId) {
+                Customer customer = customerRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+
+                CustomerAddress address = customerAddressRepository.findById(addressId)
+                                .orElseThrow(() -> new RuntimeException("Address not found"));
+
+                if (!address.getCustomer().getId().equals(customer.getId())) {
+                        throw new RuntimeException("Not authorized to modify this address");
+                }
+
+                address.setActive(false);
+                customerAddressRepository.save(address);
+        }
 }

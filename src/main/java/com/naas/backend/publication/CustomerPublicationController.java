@@ -25,8 +25,9 @@ public class CustomerPublicationController {
     // If the backend has strictly role secured logic, we can expose this to
     // everyone (or secured without Role='ADMIN')
     @GetMapping
-    public ResponseEntity<List<PublicationResponse>> getActivePublications() {
-        return ResponseEntity.ok(publicationService.searchPublications(null, true));
+    public ResponseEntity<List<PublicationResponse>> getActivePublications(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String search) {
+        return ResponseEntity.ok(publicationService.searchPublications(search, true));
     }
 
     @PostMapping("/calculate")

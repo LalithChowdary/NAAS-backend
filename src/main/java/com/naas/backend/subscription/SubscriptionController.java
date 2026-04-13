@@ -67,6 +67,22 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.suspendSubscription(getCustomerId(user), id, request));
     }
 
+    @DeleteMapping("/{id}/suspend")
+    public ResponseEntity<SubscriptionResponse> removeSubscriptionSuspension(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(subscriptionService.removeSubscriptionSuspension(getCustomerId(user), id));
+    }
+
+    @DeleteMapping("/{subscriptionId}/items/{itemId}/suspend")
+    public ResponseEntity<SubscriptionResponse> removeSubscriptionItemSuspension(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID subscriptionId,
+            @PathVariable UUID itemId) {
+        return ResponseEntity
+                .ok(subscriptionService.removeSubscriptionItemSuspension(getCustomerId(user), subscriptionId, itemId));
+    }
+
     @GetMapping("/pause")
     public ResponseEntity<List<GlobalDeliveryPauseResponse>> getGlobalPauses(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(subscriptionService.getCustomerGlobalPauses(getCustomerId(user)));
@@ -85,6 +101,7 @@ public class SubscriptionController {
             @PathVariable UUID subscriptionId,
             @PathVariable UUID itemId,
             @RequestBody ItemStatusRequest request) {
-        return ResponseEntity.ok(subscriptionService.updateItemStatus(getCustomerId(user), subscriptionId, itemId, request));
+        return ResponseEntity
+                .ok(subscriptionService.updateItemStatus(getCustomerId(user), subscriptionId, itemId, request));
     }
 }

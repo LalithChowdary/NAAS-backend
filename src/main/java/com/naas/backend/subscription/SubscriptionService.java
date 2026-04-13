@@ -78,15 +78,6 @@ public class SubscriptionService {
                                         .orElseThrow(() -> new RuntimeException(
                                                         "Publication not found with id: " + pubId));
 
-                        boolean alreadySubscribed = existingSubscriptions.stream()
-                                        .filter(sub -> sub.getItems() != null)
-                                        .flatMap(sub -> sub.getItems().stream())
-                                        .anyMatch(item -> item.getPublication().getId().equals(publication.getId()));
-                        if (alreadySubscribed) {
-                                throw new RuntimeException(
-                                                "Already subscribed to publication: " + publication.getName());
-                        }
-
                         String targetFrequency = "DAILY";
                         if (itemReq.getFrequency() != null && !itemReq.getFrequency().isEmpty()) {
                                 targetFrequency = itemReq.getFrequency();
@@ -141,6 +132,36 @@ public class SubscriptionService {
 
                 subscription.setSuspendStartDate(request.getSuspendStartDate());
                 subscription.setSuspendEndDate(request.getSuspendEndDate());
+
+                return mapToResponse(subscriptionRepository.save(subscription));
+        }
+
+        public SubscriptionResponse removeSubscriptionSuspension(UUID customerId, UUID subscriptionId) {
+                Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
+                                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+                subscription.setSuspendStartDate(null);
+                subscription.setSuspendEndDate(null);
+
+                return mapToResponse(subscriptionRepository.save(subscription));
+        }
+
+        public SubscriptionResponse removeSubscriptionItemSuspension(UUID customerId, UUID subscriptionId,
+                        UUID itemId) {
+                Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
+                                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+                SubscriptionItem item = subscription.getItems().stream()
+                                .filter(i -> i.getId().equals(itemId))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Subscription item not found"));
+
+                item.setStopStartDate(null);
+                item.setStopEndDate(null);
+
+                if (item.getStatus() == SubscriptionItemStatus.SUSPENDED) {
+                        item.setStatus(SubscriptionItemStatus.ACTIVE);
+                }
 
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
