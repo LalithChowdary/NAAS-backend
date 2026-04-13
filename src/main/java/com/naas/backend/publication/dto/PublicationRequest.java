@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 public class PublicationRequest {
     // Shared between create and update
-    // For update, these might not be required technically depending on logic, but keeping it simple as per instructions.
+    // For update, these might not be required technically depending on logic, but
+    // keeping it simple as per instructions.
 
     @NotBlank(message = "Name is required")
     private String name;
@@ -20,21 +21,55 @@ public class PublicationRequest {
     private Double price;
 
     private String description;
+    private String frequency;
     private String imageUrl;
 
     // Getters and Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() {
+        return name;
+    }
 
-    public PublicationType getType() { return type; }
-    public void setType(PublicationType type) { this.type = type; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public Double getPrice() { return price; }
-    public void setPrice(Double price) { this.price = price; }
+    public PublicationType getType() {
+        return type;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setType(PublicationType type) {
+        this.type = type;
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }

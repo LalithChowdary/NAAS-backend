@@ -56,8 +56,9 @@ public class PublicationService {
         publication.setType(request.getType());
         publication.setPrice(request.getPrice());
         publication.setDescription(request.getDescription());
+        publication.setFrequency(request.getFrequency());
         publication.setImageUrl(request.getImageUrl());
-        
+
         Publication savedPublication = publicationRepository.save(publication);
         return toResponse(savedPublication);
     }
@@ -78,6 +79,9 @@ public class PublicationService {
         if (request.getDescription() != null) {
             publication.setDescription(request.getDescription());
         }
+        if (request.getFrequency() != null) {
+            publication.setFrequency(request.getFrequency());
+        }
         if (request.getImageUrl() != null) {
             publication.setImageUrl(request.getImageUrl());
         }
@@ -89,7 +93,7 @@ public class PublicationService {
     public PublicationResponse toggleEnabled(UUID id, boolean enabled) {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Publication not found with id: " + id));
-        
+
         publication.setEnabled(enabled);
         Publication updatedPublication = publicationRepository.save(publication);
         return toResponse(updatedPublication);
@@ -102,6 +106,7 @@ public class PublicationService {
         response.setType(publication.getType());
         response.setPrice(publication.getPrice());
         response.setDescription(publication.getDescription());
+        response.setFrequency(publication.getFrequency());
         response.setImageUrl(publication.getImageUrl());
         response.setEnabled(publication.isEnabled());
         response.setCreatedAt(publication.getCreatedAt());
