@@ -48,11 +48,11 @@ public class SubscriptionService {
                 if (request.getAddressId() == null) {
                         throw new IllegalArgumentException("Delivery address must be selected");
                 }
-                
+
                 com.naas.backend.customer.CustomerAddress customerAddress = customerAddressRepository
                                 .findById(request.getAddressId())
                                 .orElseThrow(() -> new IllegalArgumentException("Delivery address not found"));
-                                
+
                 if (!customerAddress.getCustomer().getId().equals(customerId)) {
                         throw new IllegalArgumentException("Delivery address does not belong to customer");
                 }
@@ -87,10 +87,17 @@ public class SubscriptionService {
                                                 "Already subscribed to publication: " + publication.getName());
                         }
 
+                        String targetFrequency = "DAILY";
+                        if (itemReq.getFrequency() != null && !itemReq.getFrequency().isEmpty()) {
+                                targetFrequency = itemReq.getFrequency();
+                        } else if (publication.getFrequency() != null && !publication.getFrequency().isEmpty()) {
+                                targetFrequency = publication.getFrequency();
+                        }
+
                         SubscriptionItem item = SubscriptionItem.builder()
                                         .subscription(subscription)
                                         .publication(publication)
-                                        .frequency(itemReq.getFrequency() != null ? itemReq.getFrequency() : "DAILY")
+                                        .frequency(targetFrequency.toUpperCase())
                                         .customDeliveryDays(itemReq.getCustomDeliveryDays())
                                         .build();
 
@@ -138,17 +145,20 @@ public class SubscriptionService {
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
 
-        public SubscriptionResponse updateItemStatus(UUID customerId, UUID subscriptionId, UUID itemId, ItemStatusRequest request) {
+        public SubscriptionResponse updateItemStatus(UUID customerId, UUID subscriptionId, UUID itemId,
+                        ItemStatusRequest request) {
                 Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
                                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
 
                 SubscriptionItem item = subscription.getItems().stream()
-                        .filter(i -> i.getId().equals(itemId))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Subscription item not found"));
+                                .filter(i -> i.getId().equals(itemId))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Subscription item not found"));
 
-                if (request.getStatus() == SubscriptionItemStatus.REMOVED || request.getStatus() == SubscriptionItemStatus.SUSPENDED) {
-                        LocalDate checkDate = request.getStopStartDate() != null ? request.getStopStartDate() : LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS);
+                if (request.getStatus() == SubscriptionItemStatus.REMOVED
+                                || request.getStatus() == SubscriptionItemStatus.SUSPENDED) {
+                        LocalDate checkDate = request.getStopStartDate() != null ? request.getStopStartDate()
+                                        : LocalDate.now().plusDays(ADVANCE_NOTICE_DAYS);
                         validateAdvanceNotice(checkDate);
                 }
 

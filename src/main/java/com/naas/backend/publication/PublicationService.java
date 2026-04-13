@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.naas.backend.publication.dto.CartCalculationRequest;
+import com.naas.backend.publication.dto.CartCalculationResponse;
+import com.naas.backend.publication.dto.CartItemRequest;
+import com.naas.backend.publication.dto.CartItemResponse;
+import java.util.ArrayList;
+
 @Service
 public class PublicationService {
 
@@ -97,6 +103,55 @@ public class PublicationService {
         publication.setEnabled(enabled);
         Publication updatedPublication = publicationRepository.save(publication);
         return toResponse(updatedPublication);
+    }
+
+    public CartCalculationResponse calculateMonthlyCost(CartCalculationRequest request) {
+        CartCalculationResponse response = new CartCalculationResponse();
+        double totalCost = 0.0;
+        List<CartItemResponse> itemResponses = new ArrayList<>();
+
+        if (request.getItems() != null) {
+            for (CartItemRequest itemReq : request.getItems()) {
+                Publication pub = publicationRepository.findById(itemReq.getPublicationId())
+                        .orElseThrow(() -> new RuntimeException(
+                                "Publication not found with id: " + itemReq.getPublicationId()));
+
+                CartItemResponse itemResp = new CartItemResponse();
+                itemResp.setPublicationId(pub.getId());
+                itemResp.setName(pub.getName());
+                itemResp.setFrequency(pub.getFrequency());
+                itemResp.setPricePerIssue(pub.getPrice());
+                itemResp.setQuantity(itemReq.getQuantity());
+
+                double multiplier = 1.0;
+                if (pub.getFrequency() != null) {
+                    switch (pub.getFrequency().toUpperCase()) {
+                        case "DAILY":
+                            multiplier = 30.0;
+                            break;
+                        case "WEEKLY":
+                            multiplier = 4.0;
+                            break;
+                        case "MONTHLY":
+                            multiplier = 1.0;
+                            break;
+                        default:
+                            multiplier = 1.0; // Fallback
+                            break;
+                    }
+                }
+
+                double itemMonthlyCost = pub.getPrice() * multiplier * itemReq.getQuantity();
+                itemResp.setMonthlyCost(itemMonthlyCost);
+
+                itemResponses.add(itemResp);
+                totalCost += itemMonthlyCost;
+            }
+        }
+
+        response.setItems(itemResponses);
+        response.setTotalMonthlyCost(totalCost);
+        return response;
     }
 
     private PublicationResponse toResponse(Publication publication) {

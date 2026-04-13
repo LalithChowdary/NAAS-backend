@@ -59,14 +59,14 @@ public class DeliveryService {
 
             String pubNames = (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
                     : sub.getItems().stream()
-                            .filter(this::isItemActive)
+                            .filter(item -> isItemActive(item, record.getDeliveryDate()))
                             .map(item -> item.getPublication().getName())
                             .collect(Collectors.joining(", "));
 
             double dailyCost = 0.0;
             if (sub.getItems() != null) {
                 for (SubscriptionItem item : sub.getItems()) {
-                    if (isItemActive(item)) {
+                    if (isItemActive(item, record.getDeliveryDate())) {
                         dailyCost += item.getPublication().getPrice();
                     }
                 }
@@ -96,8 +96,10 @@ public class DeliveryService {
             if (sub == null)
                 return null;
 
-            double total = sub.getItems().stream().filter(this::isItemActive).mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
-            String pubs = sub.getItems().stream().filter(this::isItemActive).map(i -> i.getPublication().getName())
+            double total = sub.getItems().stream().filter(i -> isItemActive(i, record.getDeliveryDate()))
+                    .mapToDouble(i -> i.getPublication().getPrice().doubleValue()).sum();
+            String pubs = sub.getItems().stream().filter(i -> isItemActive(i, record.getDeliveryDate()))
+                    .map(i -> i.getPublication().getName())
                     .collect(java.util.stream.Collectors.joining(", "));
 
             return DeliveryPersonHistoryResponse.builder()
@@ -106,7 +108,8 @@ public class DeliveryService {
                     .deliveryDate(record.getDeliveryDate())
                     .status(record.getStatus().name())
                     .customerName(sub.getCustomer().getName())
-                    .customerAddress(sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address")
+                    .customerAddress(
+                            sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address")
                     .publications(pubs)
                     .totalValue(total)
                     .payout(total * 0.025)
@@ -132,18 +135,19 @@ public class DeliveryService {
             DeliveryPerson person = deliveryPersonRepository.findById(record.getDeliveryPersonId()).orElse(null);
 
             Map<String, Object> map = new HashMap<>();
-            
+
             Hub hub = record.getHubId() != null ? hubRepository.findById(record.getHubId()).orElse(null) : null;
-            
+
             map.put("subscriptionId", sub.getId());
             map.put("customerId", sub.getCustomer().getId());
             map.put("customerName", sub.getCustomer().getName());
             map.put("address", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getAddress() : "No Address");
-            map.put("latitude",  sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLatitude()  : null);
+            map.put("latitude", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLatitude() : null);
             map.put("longitude", sub.getCustomerAddress() != null ? sub.getCustomerAddress().getLongitude() : null);
             map.put("publicationName",
                     (sub.getItems() == null || sub.getItems().isEmpty()) ? ""
-                            : sub.getItems().stream().filter(this::isItemActive).map(item -> item.getPublication().getName())
+                            : sub.getItems().stream().filter(item -> isItemActive(item, record.getDeliveryDate()))
+                                    .map(item -> item.getPublication().getName())
                                     .collect(Collectors.joining(", ")));
             map.put("deliveryStatus", record.getStatus().name());
             map.put("assignedTo", person != null ? person.getName() : "Unknown");
@@ -202,15 +206,17 @@ public class DeliveryService {
         // Filter to only subscriptions that need a record today
         List<Subscription> toSchedule = allActive.stream()
                 .filter(sub -> {
-                    if (sub.getStartDate() != null && sub.getStartDate().isAfter(date)) return false;
-                    if (sub.getEndDate() != null && sub.getEndDate().isBefore(date)) return false;
+                    if (sub.getStartDate() != null && sub.getStartDate().isAfter(date))
+                        return false;
+                    if (sub.getEndDate() != null && sub.getEndDate().isBefore(date))
+                        return false;
                     if (sub.getSuspendStartDate() != null && sub.getSuspendEndDate() != null) {
                         if ((date.isEqual(sub.getSuspendStartDate()) || date.isAfter(sub.getSuspendStartDate())) &&
                                 (date.isEqual(sub.getSuspendEndDate()) || date.isBefore(sub.getSuspendEndDate()))) {
                             return false;
                         }
                     }
-                    if (sub.getItems() == null || sub.getItems().stream().noneMatch(this::isItemActive)) {
+                    if (sub.getItems() == null || sub.getItems().stream().noneMatch(item -> isItemActive(item, date))) {
                         return false;
                     }
                     return !deliveryRecordRepository.existsByDeliveryDateAndSubscriptionId(date, sub.getId());
@@ -222,7 +228,8 @@ public class DeliveryService {
             return;
         }
 
-        // Split: subscriptions WITH coordinates go to Fleet Routing, rest to round-robin
+        // Split: subscriptions WITH coordinates go to Fleet Routing, rest to
+        // round-robin
         List<Map<String, Object>> stops = new ArrayList<>();
         List<Subscription> noCoordSubs = new ArrayList<>();
 
@@ -248,9 +255,10 @@ public class DeliveryService {
                 List<Hub> activeHubs = hubRepository.findAll().stream()
                         .filter(Hub::isActive)
                         .collect(Collectors.toList());
-                        
+
                 assignments = fleetRoutingService.optimizeRoutes(stops, allDeliveryPersons.size(), activeHubs);
-                log.info("Fleet Routing successfully assigned {} stops across {} hubs.", assignments.size(), activeHubs.size());
+                log.info("Fleet Routing successfully assigned {} stops across {} hubs.", assignments.size(),
+                        activeHubs.size());
             } catch (Exception e) {
                 log.error("Fleet Routing API failed – falling back to round-robin. Error: " + e.getMessage(), e);
             }
@@ -267,7 +275,8 @@ public class DeliveryService {
             UUID subId = UUID.fromString(subIdStr);
             Subscription sub = toSchedule.stream()
                     .filter(s -> s.getId().equals(subId)).findFirst().orElse(null);
-            if (sub == null) continue;
+            if (sub == null)
+                continue;
 
             int vehicleIdx = assignment.getVehicleIndex();
             DeliveryPerson assigned = (vehicleIdx < allDeliveryPersons.size())
@@ -277,7 +286,8 @@ public class DeliveryService {
             saveRecord(sub, assigned, date, assignment.getAssignedHubId(), assignment.getRouteSequence());
         }
 
-        // Save records for stops without coordinates or skipped by FleetRouting (round-robin fallback)
+        // Save records for stops without coordinates or skipped by FleetRouting
+        // (round-robin fallback)
         for (int i = 0; i < toSchedule.size(); i++) {
             Subscription sub = toSchedule.get(i);
             if (!assignedSubIds.contains(sub.getId().toString())) {
@@ -291,7 +301,8 @@ public class DeliveryService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private void saveRecord(Subscription sub, DeliveryPerson person, LocalDate date, UUID hubId, Integer routeSequence) {
+    private void saveRecord(Subscription sub, DeliveryPerson person, LocalDate date, UUID hubId,
+            Integer routeSequence) {
         DeliveryRecord record = DeliveryRecord.builder()
                 .deliveryDate(date)
                 .deliveryPersonId(person.getId())
@@ -324,19 +335,44 @@ public class DeliveryService {
         return message != null && message.contains("delivery_records_pkey");
     }
 
-    private boolean isItemActive(SubscriptionItem item) {
-        if (item.getStatus() == SubscriptionItemStatus.REMOVED) {
+    private boolean isItemActive(SubscriptionItem item, LocalDate date) {
+        if (item.getStatus() == com.naas.backend.subscription.SubscriptionItemStatus.REMOVED) {
             return false;
         }
-        if (item.getStatus() == SubscriptionItemStatus.SUSPENDED) {
-            LocalDate today = LocalDate.now();
+        if (item.getStatus() == com.naas.backend.subscription.SubscriptionItemStatus.SUSPENDED) {
             if (item.getStopStartDate() != null && item.getStopEndDate() != null) {
-                if ((today.isEqual(item.getStopStartDate()) || today.isAfter(item.getStopStartDate())) &&
-                    (today.isEqual(item.getStopEndDate()) || today.isBefore(item.getStopEndDate()))) {
+                if ((date.isEqual(item.getStopStartDate()) || date.isAfter(item.getStopStartDate())) &&
+                        (date.isEqual(item.getStopEndDate()) || date.isBefore(item.getStopEndDate()))) {
                     return false;
                 }
             }
         }
-        return true;
+
+        // Frequency Check
+        String freq = item.getFrequency() != null ? item.getFrequency().toUpperCase() : "DAILY";
+
+        switch (freq) {
+            case "DAILY":
+                return true;
+            case "WEEKLY":
+                // e.g. Deliver on Sunday if WEEKLY
+                return date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
+            case "MONTHLY":
+                // e.g. Deliver on the 1st of the month if MONTHLY
+                return date.getDayOfMonth() == 1;
+            case "ALTERNATE":
+                // Simple rule: deliver on even days of counting epoch, or just basic day of
+                // year check
+                return date.getDayOfYear() % 2 == 0;
+            case "CUSTOM":
+                String customDays = item.getCustomDeliveryDays();
+                if (customDays != null && !customDays.isEmpty()) {
+                    String todayName = date.getDayOfWeek().name();
+                    return customDays.toUpperCase().contains(todayName);
+                }
+                return false;
+            default:
+                return true; // Fallback to daily
+        }
     }
 }
