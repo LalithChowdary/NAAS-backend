@@ -111,4 +111,43 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> updateMyProfile(org.springframework.security.core.Authentication authentication, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(adminService.updateMyProfile(authentication.getName(), body));
     }
+
+    // ----------------------------------------------------------------
+    // Admins Management
+    // ----------------------------------------------------------------
+
+    @GetMapping("/admins")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.naas.backend.admin.dto.AdminResponse>> getAdmins() {
+        return ResponseEntity.ok(adminService.getAllAdmins());
+    }
+
+    @GetMapping("/admins/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.naas.backend.admin.dto.AdminResponse> getAdmin(@PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(adminService.getAdminById(id));
+    }
+
+    @PutMapping("/admins/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.naas.backend.admin.dto.AdminResponse> updateAdmin(
+            @PathVariable java.util.UUID id,
+            @RequestBody com.naas.backend.admin.dto.UpdateAdminRequest request) {
+        return ResponseEntity.ok(adminService.updateAdmin(id, request));
+    }
+
+    @PatchMapping("/admins/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.naas.backend.admin.dto.AdminResponse> toggleAdminStatus(
+            @PathVariable java.util.UUID id,
+            @RequestParam boolean active) {
+        return ResponseEntity.ok(adminService.toggleStatus(id, active));
+    }
+
+    @DeleteMapping("/admins/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteAdmin(@PathVariable java.util.UUID id) {
+        adminService.deleteAdmin(id);
+        return ResponseEntity.ok("Admin deactivated successfully");
+    }
 }

@@ -118,4 +118,48 @@ public class AdminService {
         adminRepository.save(admin);
         return getMyProfile(email);
     }
+
+    public java.util.List<com.naas.backend.admin.dto.AdminResponse> getAllAdmins() {
+        return adminRepository.findAll().stream().map(this::mapToResponse).collect(java.util.stream.Collectors.toList());
+    }
+
+    public com.naas.backend.admin.dto.AdminResponse getAdminById(java.util.UUID id) {
+        Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+        return mapToResponse(admin);
+    }
+
+    @Transactional
+    public com.naas.backend.admin.dto.AdminResponse updateAdmin(java.util.UUID id, com.naas.backend.admin.dto.UpdateAdminRequest request) {
+        Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+        if (request.getName() != null) admin.setName(request.getName());
+        if (request.getPhone() != null) admin.setPhone(request.getPhone());
+        if (request.getEmployeeId() != null) admin.setEmployeeId(request.getEmployeeId());
+        return mapToResponse(adminRepository.save(admin));
+    }
+
+    @Transactional
+    public com.naas.backend.admin.dto.AdminResponse toggleStatus(java.util.UUID id, boolean active) {
+        Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+        admin.getUser().setActive(active);
+        userRepository.save(admin.getUser());
+        return mapToResponse(admin);
+    }
+
+    @Transactional
+    public void deleteAdmin(java.util.UUID id) {
+        Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+        admin.getUser().setActive(false); // soft delete
+        userRepository.save(admin.getUser());
+    }
+
+    private com.naas.backend.admin.dto.AdminResponse mapToResponse(Admin admin) {
+        return com.naas.backend.admin.dto.AdminResponse.builder()
+                .id(admin.getId())
+                .name(admin.getName())
+                .email(admin.getUser().getEmail())
+                .phone(admin.getPhone())
+                .employeeId(admin.getEmployeeId())
+                .active(admin.getUser().isActive())
+                .build();
+    }
 }
