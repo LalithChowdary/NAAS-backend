@@ -49,7 +49,7 @@ public class DeliveryPersonService {
                 .name(name)
                 .phone(phone)
                 .employeeId(employeeId)
-                
+
                 .status("APPROVED")
                 .build();
         return deliveryPersonRepository.save(person);
@@ -68,16 +68,16 @@ public class DeliveryPersonService {
                 .user(user)
                 .name(name)
                 .phone(phone)
-                
+
                 .status("PENDING")
                 .build();
         return deliveryPersonRepository.save(person);
     }
-    
+
     public List<DeliveryPerson> getPendingRequests() {
         return deliveryPersonRepository.findByStatus("PENDING");
     }
-    
+
     public DeliveryPerson approveDeliveryPerson(UUID id) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         person.setStatus("APPROVED");
@@ -86,7 +86,7 @@ public class DeliveryPersonService {
         userRepository.save(user);
         return deliveryPersonRepository.save(person);
     }
-    
+
     public DeliveryPerson rejectDeliveryPerson(UUID id) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         person.setStatus("REJECTED");
@@ -101,6 +101,7 @@ public class DeliveryPersonService {
         User user = userRepository.findByEmail(email).orElseThrow();
         return deliveryPersonRepository.findByUser(user).orElseThrow();
     }
+
     public DeliveryPerson updateProfile(String email, String name, String phone, String payoutDetails) {
         DeliveryPerson person = getByEmail(email);
         if (name != null)
@@ -112,7 +113,8 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.save(person);
     }
 
-    public DeliveryPerson updateDeliveryPersonAsAdmin(UUID id, String name, String phone, String employeeId, String payoutDetails) {
+    public DeliveryPerson updateDeliveryPersonAsAdmin(UUID id, String name, String phone, String employeeId,
+            String payoutDetails) {
         DeliveryPerson person = deliveryPersonRepository.findById(id).orElseThrow();
         if (name != null)
             person.setName(name);
@@ -120,7 +122,7 @@ public class DeliveryPersonService {
             person.setPhone(phone);
         if (employeeId != null)
             person.setEmployeeId(employeeId);
-        
+
         if (payoutDetails != null)
             person.setPayoutDetails(payoutDetails);
         return deliveryPersonRepository.save(person);
@@ -191,7 +193,7 @@ public class DeliveryPersonService {
     public List<PayoutResponse> getMyPayouts(String email) {
         DeliveryPerson person = deliveryPersonRepository.findByUser_Email(email)
                 .orElseThrow(() -> new RuntimeException("DeliveryPerson not found"));
-        
+
         return deliveryPersonPayoutRepository.findByDeliveryPersonId(person.getId()).stream()
                 .map(payout -> {
                     PayoutResponse res = new PayoutResponse();

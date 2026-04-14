@@ -93,7 +93,8 @@ public class ReportService {
     public List<DeliveryPersonnelPaymentResponse> getDeliveryPersonnelPayment(LocalDate startDate, LocalDate endDate) {
         String sql = "SELECT dp.id as deliveryPersonId, dp.name as deliveryPersonName, dp.employee_id as employeeId, " +
                 "COUNT(DISTINCT d.id) as deliveriesCompleted, " +
-                "COALESCE(SUM(p.price), 0) as totalDeliveryValue " +
+                "COALESCE(SUM(p.price), 0) as totalDeliveryValue, " +
+                "(SELECT COALESCE(SUM(amount_paid), 0) FROM delivery_person_payouts dpp WHERE dpp.delivery_person_id = dp.id AND ((dpp.start_date >= ? AND dpp.start_date <= ?) OR (dpp.end_date >= ? AND dpp.end_date <= ?) OR (dpp.start_date <= ? AND dpp.end_date >= ?))) as alreadyPaid " +
                 "FROM delivery_records d " +
                 "JOIN delivery_persons dp ON d.delivery_person_id = dp.id " +
                 "LEFT JOIN subscription_items si ON d.subscription_id = si.subscription_id " +
@@ -107,6 +108,13 @@ public class ReportService {
             if (totalVal == null)
                 totalVal = BigDecimal.ZERO;
             BigDecimal payout = totalVal.multiply(new BigDecimal("0.025"));
+            BigDecimal alreadyPaid = rs.getBigDecimal("alreadyPaid");
+            if (alreadyPaid == null)
+                alreadyPaid = BigDecimal.ZERO;
+            BigDecimal remainingPayout = payout.subtract(alreadyPaid);
+            if (remainingPayout.compareTo(BigDecimal.ZERO) < 0) {
+                remainingPayout = BigDecimal.ZERO;
+            }
 
             return DeliveryPersonnelPaymentResponse.builder()
                     .deliveryPersonId(java.util.UUID.fromString(rs.getString("deliveryPersonId")))
@@ -115,8 +123,10 @@ public class ReportService {
                     .deliveriesCompleted(rs.getLong("deliveriesCompleted"))
                     .totalDeliveryValue(totalVal)
                     .paymentAmount(payout)
+                    .alreadyPaid(alreadyPaid)
+                    .remainingPayout(remainingPayout)
                     .build();
-        }, startDate, endDate);
+        }, startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate);
     }
 
     public List<WhoReceivedWhatResponse> getWhoReceivedWhat(LocalDate startDate, LocalDate endDate) {

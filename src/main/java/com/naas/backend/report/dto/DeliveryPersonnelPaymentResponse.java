@@ -18,4 +18,6 @@ public class DeliveryPersonnelPaymentResponse {
     private long deliveriesCompleted;
     private BigDecimal totalDeliveryValue;
     private BigDecimal paymentAmount; // 2.5% of value
+    private BigDecimal alreadyPaid;
+    private BigDecimal remainingPayout;
 }

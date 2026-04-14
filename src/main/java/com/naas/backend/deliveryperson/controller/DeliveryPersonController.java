@@ -39,8 +39,7 @@ public class DeliveryPersonController {
                 auth.getName(),
                 body.get("name"),
                 body.get("phone"),
-                body.get("payoutDetails")
-        ));
+                body.get("payoutDetails")));
     }
 
     @GetMapping
@@ -48,7 +47,7 @@ public class DeliveryPersonController {
     public ResponseEntity<List<DeliveryPerson>> getAll() {
         return ResponseEntity.ok(deliveryPersonService.getAllDeliveryPersonnel());
     }
-    
+
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<DeliveryPerson>> getPendingRequests() {
@@ -73,13 +72,12 @@ public class DeliveryPersonController {
                 .ok(deliveryPersonService.createDeliveryPerson(name, email, password, phone, employeeId));
     }
 
-    
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPerson> approve(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.approveDeliveryPerson(id));
     }
-    
+
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPerson> reject(@PathVariable UUID id) {
@@ -106,14 +104,14 @@ public class DeliveryPersonController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable UUID id, @RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable UUID id,
+            @RequestBody java.util.Map<String, String> body) {
         return ResponseEntity.ok(deliveryPersonService.updateDeliveryPersonAsAdmin(
                 id,
                 body.get("name"),
                 body.get("phone"),
                 body.get("employeeId"),
-                body.get("payoutDetails")
-        ));
+                body.get("payoutDetails")));
     }
 
     @GetMapping("/{id}/payout")
