@@ -24,7 +24,8 @@ public class ReportService {
         private final DeliveryRecordRepository deliveryRecordRepository;
         private final SubscriptionRepository subscriptionRepository;
 
-        public ReportService(JdbcTemplate jdbcTemplate, DeliveryRecordRepository deliveryRecordRepository, SubscriptionRepository subscriptionRepository) {
+        public ReportService(JdbcTemplate jdbcTemplate, DeliveryRecordRepository deliveryRecordRepository,
+                        SubscriptionRepository subscriptionRepository) {
                 this.jdbcTemplate = jdbcTemplate;
                 this.deliveryRecordRepository = deliveryRecordRepository;
                 this.subscriptionRepository = subscriptionRepository;
@@ -116,27 +117,32 @@ public class ReportService {
                                 "GROUP BY dp.id, dp.name, dp.employee_id " +
                                 "ORDER BY deliveriesCompleted DESC";
 
-                List<DeliveryPersonnelPaymentResponse> responses = new java.util.ArrayList<>(jdbcTemplate.query(sql, (rs, rowNum) -> {
-                        BigDecimal alreadyPaid = rs.getBigDecimal("alreadyPaid");
-                        if (alreadyPaid == null)
-                                alreadyPaid = BigDecimal.ZERO;
+                List<DeliveryPersonnelPaymentResponse> responses = new java.util.ArrayList<>(
+                                jdbcTemplate.query(sql, (rs, rowNum) -> {
+                                        BigDecimal alreadyPaid = rs.getBigDecimal("alreadyPaid");
+                                        if (alreadyPaid == null)
+                                                alreadyPaid = BigDecimal.ZERO;
 
-                        return DeliveryPersonnelPaymentResponse.builder()
-                                        .deliveryPersonId(UUID.fromString(rs.getString("deliveryPersonId")))
-                                        .deliveryPersonName(rs.getString("deliveryPersonName"))
-                                        .employeeId(rs.getString("employeeId"))
-                                        .deliveriesCompleted(rs.getLong("deliveriesCompleted"))
-                                        .alreadyPaid(alreadyPaid)
-                                        .build();
-                }, startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate));
+                                        return DeliveryPersonnelPaymentResponse.builder()
+                                                        .deliveryPersonId(UUID
+                                                                        .fromString(rs.getString("deliveryPersonId")))
+                                                        .deliveryPersonName(rs.getString("deliveryPersonName"))
+                                                        .employeeId(rs.getString("employeeId"))
+                                                        .deliveriesCompleted(rs.getLong("deliveriesCompleted"))
+                                                        .alreadyPaid(alreadyPaid)
+                                                        .build();
+                                }, startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate));
 
                 for (DeliveryPersonnelPaymentResponse res : responses) {
-                        List<DeliveryRecord> records = deliveryRecordRepository.findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
-                                        res.getDeliveryPersonId(), startDate, endDate, DeliveryRecord.DeliveryStatus.DELIVERED);
-                        
+                        List<DeliveryRecord> records = deliveryRecordRepository
+                                        .findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
+                                                        res.getDeliveryPersonId(), startDate, endDate,
+                                                        DeliveryRecord.DeliveryStatus.DELIVERED);
+
                         double total = 0.0;
                         for (DeliveryRecord rec : records) {
-                                Subscription sub = subscriptionRepository.findById(rec.getSubscriptionId()).orElse(null);
+                                Subscription sub = subscriptionRepository.findById(rec.getSubscriptionId())
+                                                .orElse(null);
                                 if (sub != null && sub.getItems() != null) {
                                         total += sub.getItems().stream()
                                                         .filter(i -> i.isActiveOn(rec.getDeliveryDate()))
@@ -144,15 +150,15 @@ public class ReportService {
                                                         .sum();
                                 }
                         }
-                        
+
                         BigDecimal totalVal = BigDecimal.valueOf(total);
                         BigDecimal payout = totalVal.multiply(new BigDecimal("0.025"));
-                        
+
                         BigDecimal remainingPayout = payout.subtract(res.getAlreadyPaid());
                         if (remainingPayout.compareTo(BigDecimal.ZERO) < 0) {
                                 remainingPayout = BigDecimal.ZERO;
                         }
-                        
+
                         res.setTotalDeliveryValue(totalVal);
                         res.setPaymentAmount(payout);
                         res.setRemainingPayout(remainingPayout);

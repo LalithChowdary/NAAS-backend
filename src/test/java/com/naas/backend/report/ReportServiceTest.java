@@ -49,7 +49,7 @@ class ReportServiceTest {
 
         @Mock
         private JdbcTemplate jdbcTemplate;
-        
+
         @Mock
         private DeliveryRecordRepository deliveryRecordRepository;
 
@@ -262,10 +262,12 @@ class ReportServiceTest {
                                                 .build());
 
                 when(jdbcTemplate.query(anyString(),
-                                ArgumentMatchers.<RowMapper<DeliveryPersonnelPaymentResponse>>any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                                ArgumentMatchers.<RowMapper<DeliveryPersonnelPaymentResponse>>any(), any(), any(),
+                                any(), any(), any(), any(), any(), any()))
                                 .thenReturn(mockData);
 
-                com.naas.backend.delivery.entity.DeliveryRecord rec = com.naas.backend.delivery.entity.DeliveryRecord.builder()
+                com.naas.backend.delivery.entity.DeliveryRecord rec = com.naas.backend.delivery.entity.DeliveryRecord
+                                .builder()
                                 .subscriptionId(subId).deliveryDate(LocalDate.of(2026, 4, 15)).build();
                 when(deliveryRecordRepository.findByDeliveryPersonIdAndDeliveryDateBetweenAndStatus(
                                 eq(dpId), any(), any(), any())).thenReturn(List.of(rec));
@@ -280,8 +282,7 @@ class ReportServiceTest {
                                                                 .status(com.naas.backend.subscription.SubscriptionItemStatus.ACTIVE)
                                                                 .frequency("DAILY")
                                                                 .publication(pub)
-                                                                .build()
-                                ))
+                                                                .build()))
                                 .build();
                 when(subscriptionRepository.findById(subId)).thenReturn(java.util.Optional.of(sub));
 
