@@ -146,6 +146,23 @@ public class SubscriptionService {
                 return mapToResponse(subscriptionRepository.save(subscription));
         }
 
+        public SubscriptionResponse changeSubscriptionAddress(UUID customerId, UUID subscriptionId,
+                        ChangeAddressRequest request) {
+                Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
+                                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+                com.naas.backend.customer.CustomerAddress address = customerAddressRepository
+                                .findById(request.getAddressId())
+                                .orElseThrow(() -> new RuntimeException("Address not found"));
+
+                if (!address.getCustomer().getId().equals(customerId)) {
+                        throw new RuntimeException("Address does not belong to customer");
+                }
+
+                subscription.setCustomerAddress(address);
+                return mapToResponse(subscriptionRepository.save(subscription));
+        }
+
         public SubscriptionResponse removeSubscriptionItemSuspension(UUID customerId, UUID subscriptionId,
                         UUID itemId) {
                 Subscription subscription = subscriptionRepository.findByIdAndCustomerId(subscriptionId, customerId)
@@ -274,6 +291,12 @@ public class SubscriptionService {
                                 .customerId(subscription.getCustomer() != null ? subscription.getCustomer().getId()
                                                 : null)
                                 .customerName(subscription.getCustomer() != null ? subscription.getCustomer().getName()
+                                                : null)
+                                .addressId(subscription.getCustomerAddress() != null
+                                                ? subscription.getCustomerAddress().getId()
+                                                : null)
+                                .address(subscription.getCustomerAddress() != null
+                                                ? subscription.getCustomerAddress().getAddress()
                                                 : null)
                                 .publicationId(firstPubId)
                                 .publicationName(pubNames)

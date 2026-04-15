@@ -1,10 +1,11 @@
-package com.naas.backend.admin.dto;
+package com.naas.backend.deliveryperson.dto;
 
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class UpdateAdminRequest {
+public class UpdateDeliveryPersonRequest {
+
     private String name;
 
     @Pattern(
@@ -13,5 +14,6 @@ public class UpdateAdminRequest {
     )
     private String phone;
 
+    private String payoutDetails;
     private String employeeId;
 }

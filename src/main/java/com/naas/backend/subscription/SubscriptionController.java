@@ -67,6 +67,14 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.suspendSubscription(getCustomerId(user), id, request));
     }
 
+    @PutMapping("/{id}/address")
+    public ResponseEntity<SubscriptionResponse> changeSubscriptionAddress(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID id,
+            @RequestBody ChangeAddressRequest request) {
+        return ResponseEntity.ok(subscriptionService.changeSubscriptionAddress(getCustomerId(user), id, request));
+    }
+
     @DeleteMapping("/{id}/suspend")
     public ResponseEntity<SubscriptionResponse> removeSubscriptionSuspension(
             @AuthenticationPrincipal User user,

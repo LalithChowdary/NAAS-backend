@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.naas.backend.admin.dto.CreateAdminRequest;
 import com.naas.backend.admin.dto.CreateDeliveryPersonRequest;
+import com.naas.backend.admin.dto.UpdateAdminRequest;
 import com.naas.backend.customer.CustomerService;
 import com.naas.backend.customer.dto.CreateCustomerByAdminRequest;
 import com.naas.backend.customer.dto.CustomerResponse;
@@ -75,7 +76,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CustomerResponse> updateCustomer(
             @PathVariable UUID id,
-            @RequestBody UpdateCustomerRequest request) {
+            @Valid @RequestBody UpdateCustomerRequest request) {
         return ResponseEntity.ok(customerService.updateCustomer(id, request));
     }
 
@@ -108,8 +109,12 @@ public class AdminController {
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> updateMyProfile(org.springframework.security.core.Authentication authentication, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(adminService.updateMyProfile(authentication.getName(), body));
+    public ResponseEntity<Map<String, String>> updateMyProfile(org.springframework.security.core.Authentication authentication, @Valid @RequestBody UpdateAdminRequest request) {
+        Map<String, String> updates = new java.util.HashMap<>();
+        if (request.getName() != null) updates.put("name", request.getName());
+        if (request.getPhone() != null) updates.put("phone", request.getPhone());
+        if (request.getEmployeeId() != null) updates.put("employeeId", request.getEmployeeId());
+        return ResponseEntity.ok(adminService.updateMyProfile(authentication.getName(), updates));
     }
 
     // ----------------------------------------------------------------
@@ -132,7 +137,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<com.naas.backend.admin.dto.AdminResponse> updateAdmin(
             @PathVariable java.util.UUID id,
-            @RequestBody com.naas.backend.admin.dto.UpdateAdminRequest request) {
+            @Valid @RequestBody com.naas.backend.admin.dto.UpdateAdminRequest request) {
         return ResponseEntity.ok(adminService.updateAdmin(id, request));
     }
 

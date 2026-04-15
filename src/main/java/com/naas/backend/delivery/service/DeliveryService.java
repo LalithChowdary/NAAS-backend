@@ -336,43 +336,6 @@ public class DeliveryService {
     }
 
     private boolean isItemActive(SubscriptionItem item, LocalDate date) {
-        if (item.getStatus() == com.naas.backend.subscription.SubscriptionItemStatus.REMOVED) {
-            return false;
-        }
-        if (item.getStatus() == com.naas.backend.subscription.SubscriptionItemStatus.SUSPENDED) {
-            if (item.getStopStartDate() != null && item.getStopEndDate() != null) {
-                if ((date.isEqual(item.getStopStartDate()) || date.isAfter(item.getStopStartDate())) &&
-                        (date.isEqual(item.getStopEndDate()) || date.isBefore(item.getStopEndDate()))) {
-                    return false;
-                }
-            }
-        }
-
-        // Frequency Check
-        String freq = item.getFrequency() != null ? item.getFrequency().toUpperCase() : "DAILY";
-
-        switch (freq) {
-            case "DAILY":
-                return true;
-            case "WEEKLY":
-                // e.g. Deliver on Sunday if WEEKLY
-                return date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
-            case "MONTHLY":
-                // e.g. Deliver on the 1st of the month if MONTHLY
-                return date.getDayOfMonth() == 1;
-            case "ALTERNATE":
-                // Simple rule: deliver on even days of counting epoch, or just basic day of
-                // year check
-                return date.getDayOfYear() % 2 == 0;
-            case "CUSTOM":
-                String customDays = item.getCustomDeliveryDays();
-                if (customDays != null && !customDays.isEmpty()) {
-                    String todayName = date.getDayOfWeek().name();
-                    return customDays.toUpperCase().contains(todayName);
-                }
-                return false;
-            default:
-                return true; // Fallback to daily
-        }
+        return item.isActiveOn(date);
     }
 }

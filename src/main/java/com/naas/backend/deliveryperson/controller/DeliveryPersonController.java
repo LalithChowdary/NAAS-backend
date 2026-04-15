@@ -3,7 +3,10 @@ package com.naas.backend.deliveryperson.controller;
 import java.util.UUID;
 
 import com.naas.backend.deliveryperson.DeliveryPerson;
+import com.naas.backend.deliveryperson.dto.DeliveryPersonSignupRequest;
+import com.naas.backend.deliveryperson.dto.UpdateDeliveryPersonRequest;
 import com.naas.backend.deliveryperson.service.DeliveryPersonService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,13 +36,13 @@ public class DeliveryPersonController {
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('DELIVERY_PERSON')")
-    public ResponseEntity<DeliveryPerson> updateMe(@RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<DeliveryPerson> updateMe(@Valid @RequestBody UpdateDeliveryPersonRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(deliveryPersonService.updateProfile(
                 auth.getName(),
-                body.get("name"),
-                body.get("phone"),
-                body.get("payoutDetails")));
+                request.getName(),
+                request.getPhone(),
+                request.getPayoutDetails()));
     }
 
     @GetMapping
@@ -55,12 +58,12 @@ public class DeliveryPersonController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<DeliveryPerson> signup(@RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<DeliveryPerson> signup(@Valid @RequestBody DeliveryPersonSignupRequest request) {
         return ResponseEntity.ok(deliveryPersonService.signupRequest(
-                body.get("name"),
-                body.get("email"),
-                body.get("password"),
-                body.get("phone")));
+                request.getName(),
+                request.getEmail(),
+                request.getPassword(),
+                request.getPhone()));
     }
 
     @PostMapping
@@ -98,20 +101,20 @@ public class DeliveryPersonController {
 
     @GetMapping("/{id}/deliveries")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<com.naas.backend.delivery.entity.DeliveryRecord>> getDeliveries(@PathVariable UUID id) {
+    public ResponseEntity<List<java.util.Map<String, Object>>> getDeliveries(@PathVariable UUID id) {
         return ResponseEntity.ok(deliveryPersonService.getDeliveriesForDeliveryPerson(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeliveryPerson> updateDeliveryPerson(@PathVariable UUID id,
-            @RequestBody java.util.Map<String, String> body) {
+            @Valid @RequestBody UpdateDeliveryPersonRequest request) {
         return ResponseEntity.ok(deliveryPersonService.updateDeliveryPersonAsAdmin(
                 id,
-                body.get("name"),
-                body.get("phone"),
-                body.get("employeeId"),
-                body.get("payoutDetails")));
+                request.getName(),
+                request.getPhone(),
+                request.getEmployeeId(),
+                request.getPayoutDetails()));
     }
 
     @GetMapping("/{id}/payout")

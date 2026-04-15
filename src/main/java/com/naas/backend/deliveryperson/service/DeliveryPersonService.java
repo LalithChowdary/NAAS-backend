@@ -20,7 +20,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +37,18 @@ public class DeliveryPersonService {
     private final PublicationRepository publicationRepository;
     private final com.naas.backend.subscription.SubscriptionRepository subscriptionRepository;
     private final DeliveryPersonPayoutRepository deliveryPersonPayoutRepository;
+    private final com.naas.backend.customer.CustomerRepository customerRepository;
 
     public DeliveryPerson createDeliveryPerson(String name, String email, String password, String phone,
             String employeeId) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered");
+        }
+        // Auto-generate if no employeeId supplied
+        String resolvedEmployeeId = (employeeId != null && !employeeId.isBlank())
+                ? employeeId
+                : "EMP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
@@ -48,7 +61,7 @@ public class DeliveryPersonService {
                 .user(user)
                 .name(name)
                 .phone(phone)
-                .employeeId(employeeId)
+                .employeeId(resolvedEmployeeId)
 
                 .status("APPROVED")
                 .build();
@@ -56,6 +69,9 @@ public class DeliveryPersonService {
     }
 
     public DeliveryPerson signupRequest(String name, String email, String password, String phone) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered");
+        }
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
@@ -158,10 +174,31 @@ public class DeliveryPersonService {
         return deliveryPersonRepository.findById(id).orElseThrow();
     }
 
-    public List<DeliveryRecord> getDeliveriesForDeliveryPerson(UUID id) {
-        return deliveryRecordRepository.findAll().stream()
+    public List<Map<String, Object>> getDeliveriesForDeliveryPerson(UUID id) {
+        List<DeliveryRecord> records = deliveryRecordRepository.findAll().stream()
                 .filter(record -> record.getDeliveryPersonId().equals(id))
+                .sorted((a, b) -> b.getDeliveryDate().compareTo(a.getDeliveryDate()))
                 .toList();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (DeliveryRecord record : records) {
+            String customerName = null;
+            try {
+                com.naas.backend.customer.Customer customer =
+                        customerRepository.findById(record.getCustomerId()).orElse(null);
+                customerName = customer != null ? customer.getName() : null;
+            } catch (Exception ignored) {}
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", record.getId());
+            map.put("deliveryDate", record.getDeliveryDate());
+            map.put("status", record.getStatus().name());
+            map.put("customerId", record.getCustomerId());
+            map.put("customerName", customerName);
+            map.put("subscriptionId", record.getSubscriptionId());
+            result.add(map);
+        }
+        return result;
     }
 
     public PayoutResponse processPayout(UUID deliveryPersonId, PayoutRequest request) {

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,11 +38,14 @@ public class AdminService {
                 .build();
         userRepository.save(user);
 
+        // Auto-generate employee ID: EMP-<first 8 chars of a new UUID>
+        String employeeId = "EMP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+
         Admin admin = Admin.builder()
                 .user(user)
                 .name(request.getName())
                 .phone(request.getPhone())
-                .employeeId(request.getEmployeeId())
+                .employeeId(employeeId)
                 .build();
         adminRepository.save(admin);
 
@@ -66,11 +70,14 @@ public class AdminService {
                 .build();
         userRepository.save(user);
 
+        // Auto-generate employee ID: EMP-<first 8 chars of a new UUID>
+        String dpEmployeeId = "EMP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+
         DeliveryPerson dp = DeliveryPerson.builder()
                 .user(user)
                 .name(request.getName())
                 .phone(request.getPhone())
-                .employeeId(request.getEmployeeId())
+                .employeeId(dpEmployeeId)
                 .payoutDetails(request.getPayoutDetails())
                 .build();
         deliveryPersonRepository.save(dp);
@@ -93,6 +100,7 @@ public class AdminService {
         });
         
         Map<String, String> response = new HashMap<>();
+        response.put("id", admin.getId().toString());
         if (admin.getName() != null) response.put("name", admin.getName());
         if (admin.getPhone() != null) response.put("phone", admin.getPhone());
         if (admin.getEmployeeId() != null) response.put("employeeId", admin.getEmployeeId());
@@ -140,6 +148,17 @@ public class AdminService {
     @Transactional
     public com.naas.backend.admin.dto.AdminResponse toggleStatus(java.util.UUID id, boolean active) {
         Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        // Guard: cannot disable the last active admin
+        if (!active) {
+            long activeCount = adminRepository.findAll().stream()
+                    .filter(a -> a.getUser().isActive() && !a.getId().equals(id))
+                    .count();
+            if (activeCount == 0) {
+                throw new RuntimeException("Cannot disable the last active administrator. Ensure at least one admin remains active.");
+            }
+        }
+
         admin.getUser().setActive(active);
         userRepository.save(admin.getUser());
         return mapToResponse(admin);

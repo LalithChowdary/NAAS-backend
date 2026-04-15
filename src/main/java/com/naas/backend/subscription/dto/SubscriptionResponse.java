@@ -16,6 +16,8 @@ public class SubscriptionResponse {
     private UUID id;
     private UUID customerId;
     private String customerName;
+    private UUID addressId;
+    private String address;
     private UUID publicationId; // leaving for backwards compatibility temporarily
     private String publicationName;
     private List<SubscriptionItemResponse> items; // The new proper schema

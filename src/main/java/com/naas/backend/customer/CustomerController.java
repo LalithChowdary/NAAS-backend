@@ -3,6 +3,7 @@ package com.naas.backend.customer;
 import com.naas.backend.auth.entity.User;
 import com.naas.backend.customer.dto.CustomerResponse;
 import com.naas.backend.customer.dto.UpdateCustomerRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,7 +29,7 @@ public class CustomerController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CustomerResponse> updateProfile(
             @AuthenticationPrincipal User user,
-            @RequestBody UpdateCustomerRequest request) {
+            @Valid @RequestBody UpdateCustomerRequest request) {
         return ResponseEntity.ok(customerService.updateProfile(user, request));
     }
 

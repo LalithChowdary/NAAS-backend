@@ -2,6 +2,7 @@ package com.naas.backend.customer.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -19,5 +20,9 @@ public class CreateCustomerByAdminRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
+    @Pattern(
+        regexp = "^[6-9]\\d{9}$",
+        message = "Phone number must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9"
+    )
     private String phone;
 }
