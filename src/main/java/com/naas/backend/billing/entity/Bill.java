@@ -59,7 +59,7 @@ public class Bill {
      * 0 = no reminder, 1 = 1-month overdue reminder sent, 2 = 2-month overdue (subscription cancelled).
      */
     @Builder.Default
-    @Column(name = "reminder_level", nullable = false)
+    @Column(name = "reminder_level", nullable = false, columnDefinition = "integer default 0")
     private int reminderLevel = 0;
 
     @PrePersist
