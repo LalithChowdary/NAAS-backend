@@ -54,6 +54,14 @@ public class Bill {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /**
+     * Tracks how many overdue reminders have been sent for this bill.
+     * 0 = no reminder, 1 = 1-month overdue reminder sent, 2 = 2-month overdue (subscription cancelled).
+     */
+    @Builder.Default
+    @Column(name = "reminder_level", nullable = false)
+    private int reminderLevel = 0;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

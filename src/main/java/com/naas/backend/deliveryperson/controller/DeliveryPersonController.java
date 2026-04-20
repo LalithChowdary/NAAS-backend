@@ -137,4 +137,14 @@ public class DeliveryPersonController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(deliveryPersonService.getMyPayouts(auth.getName()));
     }
+
+    // Self-deactivate: Delivery person disables their own account
+    @DeleteMapping("/me")
+    @PreAuthorize("hasRole('DELIVERY_PERSON')")
+    public ResponseEntity<String> deactivateMyAccount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        DeliveryPerson person = deliveryPersonService.getByEmail(auth.getName());
+        deliveryPersonService.toggleStatus(person.getId(), false);
+        return ResponseEntity.ok("Account deactivated successfully");
+    }
 }

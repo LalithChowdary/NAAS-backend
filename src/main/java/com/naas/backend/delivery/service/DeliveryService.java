@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -189,17 +190,18 @@ public class DeliveryService {
      * Uses Google Fleet Routing API to optimally assign deliveries to drivers.
      * Falls back to round-robin for any subscriptions missing coordinates.
      */
+    @Transactional
     public void generateSchedulesForDate(LocalDate date) {
         List<Subscription> allActive = subscriptionRepository.findAll().stream()
                 .filter(s -> s.getStatus() == SubscriptionStatus.ACTIVE)
                 .collect(Collectors.toList());
 
-        List<DeliveryPerson> allDeliveryPersons = deliveryPersonRepository.findAll().stream()
-                .filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus()))
-                .collect(Collectors.toList());
+        // Use JOIN FETCH query so User is eagerly loaded — avoids LazyInitializationException
+        // and correctly excludes DPs whose user.active = false (self-disabled accounts).
+        List<DeliveryPerson> allDeliveryPersons = deliveryPersonRepository.findAllApprovedAndActive();
 
         if (allDeliveryPersons.isEmpty()) {
-            log.info("No approved delivery persons found – skipping schedule generation.");
+            log.info("No active approved delivery persons found – skipping schedule generation.");
             return;
         }
 

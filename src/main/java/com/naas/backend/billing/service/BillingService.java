@@ -20,6 +20,7 @@ import com.naas.backend.subscription.Subscription;
 import com.naas.backend.subscription.SubscriptionRepository;
 import com.naas.backend.subscription.SubscriptionStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BillingService {
@@ -43,13 +45,69 @@ public class BillingService {
     private final DeliveryRecordRepository deliveryRecordRepository;
     private final PaymentRepository paymentRepository;
 
-    // ── Monthly scheduled generation ────────────────────────────────
-    @Scheduled(cron = "0 0 0 1 * ?")
+    // ── Monthly scheduled generation at 11:59 PM on the last day of each month ──
+    /**
+     * Fires at 23:59 on the last day of every month.
+     * Generates bills for the current (now-closing) month based on actual delivery records.
+     */
+    @Scheduled(cron = "0 59 23 L * ?")
     @Transactional
     public void scheduledGenerateMonthlyBills() {
-        YearMonth previousMonth = YearMonth.now().minusMonths(1);
-        generateBillsForMonth(previousMonth);
-        checkAndDiscontinueOverdueSubscriptions();
+        YearMonth currentMonth = YearMonth.now();
+        log.info("[BillingService] ⏰ End-of-month billing triggered for {}", currentMonth);
+        generateBillsForMonth(currentMonth);
+        log.info("[BillingService] ✅ Monthly bills generated for {}", currentMonth);
+    }
+
+    /**
+     * Fires at 23:58 on the last day of every month (just before bill generation).
+     * Evaluates all existing UNPAID bills and escalates overdue reminders:
+     *  - reminderLevel 0 → 1 (1-month overdue: log a first reminder)
+     *  - reminderLevel 1 → 2 (2-month overdue: log a final reminder + cancel subscriptions)
+     */
+    @Scheduled(cron = "0 58 23 L * ?")
+    @Transactional
+    public void processMonthlyRemindersAndCancellations() {
+        LocalDate today = LocalDate.now();
+        log.info("[BillingService] ⏰ Processing overdue reminders for {}", today);
+
+        List<Bill> unpaidBills = billRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(b -> b.getStatus() == BillStatus.UNPAID)
+                .collect(Collectors.toList());
+
+        for (Bill bill : unpaidBills) {
+            LocalDate due = bill.getDueDate();
+            int currentLevel = bill.getReminderLevel();
+
+            // 2-month overdue: final warning + cancel subscriptions
+            if (currentLevel == 1 && due.isBefore(today.minusMonths(1))) {
+                bill.setReminderLevel(2);
+                billRepository.save(bill);
+                log.warn("[BillingService] 🔴 FINAL REMINDER (2-month overdue) | Customer: {} | Bill: {} | Amount: {} | Due: {}",
+                        bill.getCustomer().getName(), bill.getId(), bill.getTotalAmount(), due);
+
+                // Cancel active subscriptions
+                List<Subscription> subs = subscriptionRepository.findByCustomerId(bill.getCustomer().getId());
+                for (Subscription sub : subs) {
+                    if (sub.getStatus() == SubscriptionStatus.ACTIVE) {
+                        sub.setStatus(SubscriptionStatus.CANCELLED);
+                        sub.setEndDate(today);
+                        subscriptionRepository.save(sub);
+                        log.warn("[BillingService] ❌ Subscription {} cancelled for customer {} due to 2-month non-payment.",
+                                sub.getId(), bill.getCustomer().getName());
+                    }
+                }
+            }
+            // 1-month overdue: first reminder
+            else if (currentLevel == 0 && due.isBefore(today)) {
+                bill.setReminderLevel(1);
+                billRepository.save(bill);
+                log.warn("[BillingService] 🟡 FIRST REMINDER (1-month overdue) | Customer: {} | Bill: {} | Amount: {} | Due: {}",
+                        bill.getCustomer().getName(), bill.getId(), bill.getTotalAmount(), due);
+            }
+        }
+
+        log.info("[BillingService] ✅ Overdue reminder processing complete. Total UNPAID bills evaluated: {}", unpaidBills.size());
     }
 
     @Transactional
@@ -218,11 +276,14 @@ public class BillingService {
                 .collect(Collectors.toList());
     }
 
-    // ── Overdue subscription discontinuation (FR-RDM3) ──────────────
+    // ── Overdue subscription discontinuation (manual trigger / legacy) ──────────────
 
+    /**
+     * Legacy manual check — discontinues subscriptions overdue by more than 2 months.
+     * The automated version is now handled by processMonthlyRemindersAndCancellations().
+     */
     @Transactional
     public void checkAndDiscontinueOverdueSubscriptions() {
-        // Discontinue subscriptions if dues unpaid for > 2 months
         LocalDate twoMonthsAgo = LocalDate.now().minusMonths(2);
         List<Bill> overdueBills = billRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(b -> b.getStatus() == BillStatus.UNPAID && b.getDueDate().isBefore(twoMonthsAgo))
@@ -235,6 +296,8 @@ public class BillingService {
                     sub.setStatus(SubscriptionStatus.CANCELLED);
                     sub.setEndDate(LocalDate.now());
                     subscriptionRepository.save(sub);
+                    log.info("[BillingService] Subscription {} manually cancelled for overdue customer {}.",
+                            sub.getId(), bill.getCustomer().getName());
                 }
             }
         }
